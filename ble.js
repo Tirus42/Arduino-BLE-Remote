@@ -55,10 +55,6 @@ function GUIUpdateColorValue(uuid, newColor) {
 
     // Update color picker
     let colorPicker = document.getElementsByName(guiName)[0];
-
-    console.log(newColor);
-    console.log("=> " + ToHexColor(newColor));
-
     colorPicker.value = ToHexColor(newColor);
 
     // Update sliders
@@ -170,11 +166,26 @@ function SetColor(characteristic, rgbw) {
     array[2] = rgbw[2];
     array[3] = rgbw[3];
 
-    /*if (PendingCharacteristicPromises.has(uuid)) {
+    let uuid = characteristic.uuid;
 
-    }*/
+    let updatePending = PendingCharacteristicPromises.has(uuid);
 
-    characteristic.writeValue(array);
+    // Set or replace pending value
+    PendingCharacteristicPromises.set(uuid, rgbw);
+
+    if (!updatePending) {
+		characteristic.writeValue(array).then(() => {
+			let currentSetValue = rgbw;
+			let targetValue = PendingCharacteristicPromises.get(uuid);
+
+			PendingCharacteristicPromises.delete(uuid);
+
+			if (targetValue != currentSetValue) {
+				// User has set a different value in the mean time, need to send again
+				SetColor(characteristic, targetValue);
+			}
+		});
+    }
 }
 
 function getSupportedProperties(characteristic) {
