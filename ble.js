@@ -12,7 +12,7 @@ function Log(str) {
 function SetModelName(modelName) {
     let element = document.getElementById('modelName');
     element.value = modelName;
-    
+
 }
 
 const SERVICE_UUID = "a6a2fc07-815c-4262-97a9-1cef5181a1e4";
@@ -32,7 +32,7 @@ function OnColorChange(element) {
 function OnSliderChange(element) {
     let name = element.name;
     let inputName = name.substr(0, name.length - 1);
-    
+
     // Read RGBW value
     let rgbw = [
         document.getElementsByName(inputName + 'R')[0].value,
@@ -40,14 +40,14 @@ function OnSliderChange(element) {
         document.getElementsByName(inputName + 'B')[0].value,
         document.getElementsByName(inputName + 'W')[0].value
     ];
-    
+
     SetColorWhenPresent(element.uuid, rgbw);
 }
 
 function ToHexColor(color) {
-    return '#' + color[0].toString(16).padStart(2, '0') 
-               + color[1].toString(16).padStart(2, '0')
-               + color[2].toString(16).padStart(2, '0');
+    return '#' + parseInt(color[0]).toString(16).padStart(2, '0')
+               + parseInt(color[1]).toString(16).padStart(2, '0')
+               + parseInt(color[2]).toString(16).padStart(2, '0');
 }
 
 function GUIUpdateColorValue(uuid, newColor) {
@@ -55,17 +55,17 @@ function GUIUpdateColorValue(uuid, newColor) {
 
     // Update color picker
     let colorPicker = document.getElementsByName(guiName)[0];
-    
+
     console.log(newColor);
     console.log("=> " + ToHexColor(newColor));
-    
+
     colorPicker.value = ToHexColor(newColor);
 
     // Update sliders
     document.getElementsByName(guiName + 'R')[0].value = newColor[0];
     document.getElementsByName(guiName + 'G')[0].value = newColor[1];
     document.getElementsByName(guiName + 'B')[0].value = newColor[2];
-    
+
     if (newColor.length == 4) {
         document.getElementsByName(guiName + 'W')[0].value = newColor[3];
     } else {
@@ -75,16 +75,15 @@ function GUIUpdateColorValue(uuid, newColor) {
 
 function SetColorWhenPresent(uuid, color) {
     let rgbw = color;
-    
+
     if (!Array.isArray(color)) {
         rgbw = ExtractRGB(color);
     }
-    
 
     if (ConnectedCharacteristics.has(uuid)) {
         SetColor(ConnectedCharacteristics.get(uuid), rgbw);
     }
-    
+
     GUIUpdateColorValue(uuid, rgbw);
 }
 
@@ -97,7 +96,7 @@ function ExtractRGB(color) {
 
 function Scan() {
   Log("Starting scan ...");
-  
+
   try {
       navigator.bluetooth.requestDevice({
         //acceptAllDevices: true,
@@ -118,7 +117,7 @@ function Scan() {
             characteristics.forEach(characteristic => {
               Log('>> Characteristic: ' + characteristic.uuid + ' ' +
                   getSupportedProperties(characteristic));
-              
+
               AddConnectedCharacteristic(characteristic);
             });
           }));
@@ -142,14 +141,14 @@ function AddConnectedCharacteristic(characteristic) {
             colorPicker.uuid = characteristic.uuid;
             colorPicker.disabled = false;
         }
-        
+
         let sliderR = document.getElementsByName(name + 'R')[0];
         let sliderG = document.getElementsByName(name + 'G')[0];
         let sliderB = document.getElementsByName(name + 'B')[0];
         let sliderW = document.getElementsByName(name + 'W')[0];
-        
+
         if (!!sliderR && !!sliderG && !!sliderB && !!sliderW) {
-            sliderR.uuid = characteristic.uuid;            
+            sliderR.uuid = characteristic.uuid;
             sliderG.uuid = characteristic.uuid;
             sliderB.uuid = characteristic.uuid;
             sliderW.uuid = characteristic.uuid;
@@ -172,7 +171,7 @@ function SetColor(characteristic, rgbw) {
     array[3] = rgbw[3];
 
     /*if (PendingCharacteristicPromises.has(uuid)) {
-        
+
     }*/
 
     characteristic.writeValue(array);

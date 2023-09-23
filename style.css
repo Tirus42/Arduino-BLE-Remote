@@ -1,3 +1,18 @@
 input.slider {
     width: calc(100vw - 5rem);
 }
+
+.slider-background-red {
+	border-radius: 5px;
+	background-color: #ff000044;
+}
+
+.slider-background-green {
+	border-radius: 5px;
+	background-color: #00ff0044;
+}
+
+.slider-background-blue {
+	border-radius: 5px;
+	background-color: #0000ff44;
+}
