@@ -12,9 +12,10 @@
     <textarea id="log" rows="10" style="width:100%;" disabled></textarea><br>
     ModelName: <input type="text" name="ModelName" value="Not connected" id="modelName" disabled>
 </p>
-Color control:
-<p>
+
+<div id="Impulse" class="hidden">
     <input type="color" name="Impulse" oninput="OnColorChange(this)" disabled> Impulse<br>
+	<p>
     <div class="slider-background-red">
     <input type="range" min="0" max="255" value="0" class="slider" name="ImpulseR" oninput="OnSliderChange(this)" disabled>Red<br>
     </div>
@@ -25,9 +26,11 @@ Color control:
     <input type="range" min="0" max="255" value="0" class="slider" name="ImpulseB" oninput="OnSliderChange(this)" disabled>Blue<br>
     </div>
     <input type="range" min="0" max="255" value="0" class="slider" name="ImpulseW" oninput="OnSliderChange(this)" disabled>White<br>
-</p>
-<p>
+	</p>
+</div>
+<div id="Warp" class="hidden">
     <input type="color" name="Warp" oninput="OnColorChange(this)" disabled> Warp<br>
+	<p>
     <div class="slider-background-red">
     <input type="range" min="0" max="255" value="0" class="slider" name="WarpR" oninput="OnSliderChange(this)" disabled>Red<br>
     </div>
@@ -38,9 +41,11 @@ Color control:
     <input type="range" min="0" max="255" value="0" class="slider" name="WarpB" oninput="OnSliderChange(this)" disabled>Blue<br>
     </div>
     <input type="range" min="0" max="255" value="0" class="slider" name="WarpW" oninput="OnSliderChange(this)" disabled>White<br>
-</p>
-<p>
+	</p>
+</div>
+<div id="Deflector" class="hidden">
     <input type="color" name="Deflector" oninput="OnColorChange(this)" disabled> Deflector<br>
+	<p>
     <div class="slider-background-red">
     <input type="range" min="0" max="255" value="0" class="slider" name="DeflectorR" oninput="OnSliderChange(this)" disabled>Red<br>
     </div>
@@ -51,9 +56,11 @@ Color control:
     <input type="range" min="0" max="255" value="0" class="slider" name="DeflectorB" oninput="OnSliderChange(this)" disabled>Blue<br>
     </div>
     <input type="range" min="0" max="255" value="0" class="slider" name="DeflectorW" oninput="OnSliderChange(this)" disabled>White<br>
-</p>
-<p>
+	</p>
+</div>
+<div id="Bussard" class="hidden">
     <input type="color" name="Bussard" oninput="OnColorChange(this)" disabled> Bussard<br>
+    <p>
     <div class="slider-background-red">
     <input type="range" min="0" max="255" value="0" class="slider" name="BussardR" oninput="OnSliderChange(this)" disabled>Red<br>
     </div>
@@ -64,6 +71,7 @@ Color control:
     <input type="range" min="0" max="255" value="0" class="slider" name="BussardB" oninput="OnSliderChange(this)" disabled>Blue<br>
     </div>
     <input type="range" min="0" max="255" value="0" class="slider" name="BussardW" oninput="OnSliderChange(this)" disabled>White<br>
-</p>
+	</p>
+</div>
 </body>
 </html>

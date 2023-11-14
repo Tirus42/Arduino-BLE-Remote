@@ -144,10 +144,15 @@ function AddConnectedCharacteristic(characteristic) {
             colorPicker.disabled = false;
         }
 
+        let divElement = document.getElementById(name);
         let sliderR = document.getElementsByName(name + 'R')[0];
         let sliderG = document.getElementsByName(name + 'G')[0];
         let sliderB = document.getElementsByName(name + 'B')[0];
         let sliderW = document.getElementsByName(name + 'W')[0];
+
+        if (!!divElement) {
+			divElement.classList.remove('hidden');
+        }
 
         if (!!sliderR && !!sliderG && !!sliderB && !!sliderW) {
             sliderR.uuid = characteristic.uuid;

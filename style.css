@@ -16,3 +16,7 @@ input.slider {
 	border-radius: 5px;
 	background-color: #0000ff44;
 }
+
+.hidden {
+	display:none;
+}
