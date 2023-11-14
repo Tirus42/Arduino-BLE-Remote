@@ -4,9 +4,15 @@ let ConnectedCharacteristics = new Map();
 
 let PendingCharacteristicPromises = new Map();
 
-function Log(str) {
-  let element = document.getElementById('log');
-  element.value += str + '\n';
+function Log(str, addNewLine = true) {
+	let element = document.getElementById('log');
+	element.value += str;
+
+	if (addNewLine) {
+		element.value += '\n';
+	}
+
+	element.scrollTop = element.scrollHeight;
 }
 
 function SetModelName(modelName) {
@@ -155,7 +161,14 @@ function AddConnectedCharacteristic(characteristic) {
         }
     }
     else if (characteristic.uuid == CHARACTERISTIC_MODEL_NAME_UUID) {
-        Log("Found ModelName characteristig, reading value ...");
+        characteristic.readValue().then((dataView) => {
+			console.log(dataView);
+
+			const dec = new TextDecoder("utf-8");
+			const decoded = dec.decode(dataView);
+
+			document.getElementById('modelName').value = decoded;
+		})
     }
 }
 
