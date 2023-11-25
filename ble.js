@@ -1,11 +1,10 @@
 // Important: Needs the "bluetooth" permission when used in a iframe
 
-let ConnectedCharacteristics = new Map();
-
-let PendingCharacteristicPromises = new Map();
+const ConnectedCharacteristics = new Map();
+const PendingCharacteristicPromises = new Map();
 
 function Log(str, addNewLine = true) {
-	let element = document.getElementById('log');
+	const element = document.getElementById('log');
 	element.value += str;
 
 	if (addNewLine) {
@@ -16,9 +15,8 @@ function Log(str, addNewLine = true) {
 }
 
 function SetModelName(modelName) {
-    let element = document.getElementById('modelName');
+    const element = document.getElementById('modelName');
     element.value = modelName;
-
 }
 
 const SERVICE_UUID = "a6a2fc07-815c-4262-97a9-1cef5181a1e4";
@@ -36,11 +34,11 @@ function OnColorChange(element) {
 }
 
 function OnSliderChange(element) {
-    let name = element.name;
+    const name = element.name;
     let inputName = name.substr(0, name.length - 1);
 
     // Read RGBW value
-    let rgbw = [
+    const rgbw = [
         document.getElementsByName(inputName + 'R')[0].value,
         document.getElementsByName(inputName + 'G')[0].value,
         document.getElementsByName(inputName + 'B')[0].value,
@@ -57,10 +55,10 @@ function ToHexColor(color) {
 }
 
 function GUIUpdateColorValue(uuid, newColor) {
-    let guiName = LED_CHARACTERISTICS[uuid];
+    const guiName = LED_CHARACTERISTICS[uuid];
 
     // Update color picker
-    let colorPicker = document.getElementsByName(guiName)[0];
+    const colorPicker = document.getElementsByName(guiName)[0];
     colorPicker.value = ToHexColor(newColor);
 
     // Update sliders
@@ -118,7 +116,7 @@ function Scan() {
             Log('> Service: ' + service.uuid);
             characteristics.forEach(characteristic => {
               Log('>> Characteristic: ' + characteristic.uuid + ' ' +
-                  getSupportedProperties(characteristic));
+                  GetSupportedProperties(characteristic));
 
               AddConnectedCharacteristic(characteristic);
             });
@@ -136,19 +134,19 @@ function AddConnectedCharacteristic(characteristic) {
     ConnectedCharacteristics.set(characteristic.uuid, characteristic);
 
     if (!!LED_CHARACTERISTICS[characteristic.uuid]) {
-        let name = LED_CHARACTERISTICS[characteristic.uuid];
-        let colorPicker = document.getElementsByName(name)[0];
+        const name = LED_CHARACTERISTICS[characteristic.uuid];
+        const colorPicker = document.getElementsByName(name)[0];
 
         if (!!colorPicker) {
             colorPicker.uuid = characteristic.uuid;
             colorPicker.disabled = false;
         }
 
-        let divElement = document.getElementById(name);
-        let sliderR = document.getElementsByName(name + 'R')[0];
-        let sliderG = document.getElementsByName(name + 'G')[0];
-        let sliderB = document.getElementsByName(name + 'B')[0];
-        let sliderW = document.getElementsByName(name + 'W')[0];
+        const divElement = document.getElementById(name);
+        const sliderR = document.getElementsByName(name + 'R')[0];
+        const sliderG = document.getElementsByName(name + 'G')[0];
+        const sliderB = document.getElementsByName(name + 'B')[0];
+        const sliderW = document.getElementsByName(name + 'W')[0];
 
         if (!!divElement) {
 			divElement.classList.remove('hidden');
@@ -178,23 +176,22 @@ function AddConnectedCharacteristic(characteristic) {
 }
 
 function SetColor(characteristic, rgbw) {
-    let array = new Uint8Array(4);
+    const array = new Uint8Array(4);
     array[0] = rgbw[0];
     array[1] = rgbw[1];
     array[2] = rgbw[2];
     array[3] = rgbw[3];
 
-    let uuid = characteristic.uuid;
-
-    let updatePending = PendingCharacteristicPromises.has(uuid);
+    const uuid = characteristic.uuid;
+    const updatePending = PendingCharacteristicPromises.has(uuid);
 
     // Set or replace pending value
     PendingCharacteristicPromises.set(uuid, rgbw);
 
     if (!updatePending) {
 		characteristic.writeValue(array).then(() => {
-			let currentSetValue = rgbw;
-			let targetValue = PendingCharacteristicPromises.get(uuid);
+			const currentSetValue = rgbw;
+			const targetValue = PendingCharacteristicPromises.get(uuid);
 
 			PendingCharacteristicPromises.delete(uuid);
 
@@ -206,13 +203,14 @@ function SetColor(characteristic, rgbw) {
     }
 }
 
-function getSupportedProperties(characteristic) {
-  let supportedProperties = [];
-  for (const p in characteristic.properties) {
-    if (characteristic.properties[p] === true) {
-      supportedProperties.push(p.toUpperCase());
-    }
-  }
-  return '[' + supportedProperties.join(', ') + ']';
-}
+function GetSupportedProperties(characteristic) {
+	const supportedProperties = [];
 
+	for (const p in characteristic.properties) {
+		if (characteristic.properties[p] === true) {
+			supportedProperties.push(p.toUpperCase());
+		}
+	}
+
+	return '[' + supportedProperties.join(', ') + ']';
+}
