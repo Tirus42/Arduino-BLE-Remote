@@ -14,6 +14,11 @@ function Log(str, addNewLine = true) {
 	element.scrollTop = element.scrollHeight;
 }
 
+function LogClear() {
+	const element = document.getElementById('log');
+	element.value = '';
+}
+
 function SetModelName(modelName) {
     const element = document.getElementById('modelName');
     element.value = modelName;
@@ -214,3 +219,13 @@ function GetSupportedProperties(characteristic) {
 
 	return '[' + supportedProperties.join(', ') + ']';
 }
+
+function Init() {
+	LogClear();
+
+	if (!navigator.bluetooth) {
+		Log("Sorry, your browser does not support web bluetooth.");
+	}
+}
+
+Init();
