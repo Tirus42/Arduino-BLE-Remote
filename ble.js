@@ -29,7 +29,14 @@ const LED_CHARACTERISTICS = {
     "cd7ce55d-019d-4204-ad2e-a4d1464e3840": "Warp",
     "45864431-5197-4c89-9c52-30e8ec7ac523": "Impulse",
     "e38f4a08-6b53-4826-937d-d62183f02d1b": "Deflector",
-    "529d6059-5633-4868-84a5-bfdef04296dd": "Bussard"
+    "529d6059-5633-4868-84a5-bfdef04296dd": "Bussard",
+
+    "1dd3cff4-ee45-452c-a8c6-d3bd3a7986b3": "Mind Stone",
+    "13e55e6a-1663-4272-ac08-e12617b2c822": "Soul Stone",
+    "46c628e6-4a1d-48c3-ba76-412eff75ad6f": "Reality Stone",
+    "269e55e4-0daf-47a9-86cc-ea8a5c680dd5": "Space Stone",
+    "492a89d2-bcb8-4a3e-9b96-31000df7a3aa": "Power Stone",
+    "03c7757e-be1c-42ef-9b58-c4be71fd3a7d": "Time Stone",
 };
 
 const CHARACTERISTIC_MODEL_NAME_UUID = "928ec7e1-b867-4b7d-904b-d3b8769a7299";
@@ -39,15 +46,14 @@ function OnColorChange(element) {
 }
 
 function OnSliderChange(element) {
-    const name = element.name;
-    let inputName = name.substr(0, name.length - 1);
+    let uuid = element.uuid;
 
     // Read RGBW value
     const rgbw = [
-        document.getElementsByName(inputName + 'R')[0].value,
-        document.getElementsByName(inputName + 'G')[0].value,
-        document.getElementsByName(inputName + 'B')[0].value,
-        document.getElementsByName(inputName + 'W')[0].value
+        document.getElementById(uuid + 'R').value,
+        document.getElementById(uuid + 'G').value,
+        document.getElementById(uuid + 'B').value,
+        document.getElementById(uuid + 'W').value
     ];
 
     SetColorWhenPresent(element.uuid, rgbw);
@@ -63,18 +69,18 @@ function GUIUpdateColorValue(uuid, newColor) {
     const guiName = LED_CHARACTERISTICS[uuid];
 
     // Update color picker
-    const colorPicker = document.getElementsByName(guiName)[0];
+    const colorPicker = document.getElementById(uuid + 'ColorPicker');
     colorPicker.value = ToHexColor(newColor);
 
     // Update sliders
-    document.getElementsByName(guiName + 'R')[0].value = newColor[0];
-    document.getElementsByName(guiName + 'G')[0].value = newColor[1];
-    document.getElementsByName(guiName + 'B')[0].value = newColor[2];
+    document.getElementById(uuid + 'R').value = newColor[0];
+    document.getElementById(uuid + 'G').value = newColor[1];
+    document.getElementById(uuid + 'B').value = newColor[2];
 
     if (newColor.length == 4) {
-        document.getElementsByName(guiName + 'W')[0].value = newColor[3];
+        document.getElementById(uuid + 'W').value = newColor[3];
     } else {
-        document.getElementsByName(guiName + 'W')[0].value = 0;
+        document.getElementById(uuid + 'W').value = 0;
     }
 }
 
@@ -109,7 +115,8 @@ function Scan() {
         	services: [SERVICE_UUID]
         }]
       }).then(device => {
-       	return device.gatt.connect();
+            RemoveAllControls();
+            return device.gatt.connect();
       }).then(server => {
       	Log("Connected, Read Services ...");
         return server.getPrimaryServices();
@@ -117,11 +124,11 @@ function Scan() {
       	Log("Gettings Characteristics ...");
         let queue = Promise.resolve();
         services.forEach(service => {
-          queue = queue.then(_ => service.getCharacteristics().then(characteristics => {
+            queue = queue.then(_ => service.getCharacteristics().then(characteristics => {
             Log('> Service: ' + service.uuid);
             characteristics.forEach(characteristic => {
-              Log('>> Characteristic: ' + characteristic.uuid + ' ' +
-                  GetSupportedProperties(characteristic));
+                Log('>> Characteristic: ' + characteristic.uuid + ' ' +
+                GetSupportedProperties(characteristic));
 
               AddConnectedCharacteristic(characteristic);
             });
@@ -139,33 +146,28 @@ function AddConnectedCharacteristic(characteristic) {
     ConnectedCharacteristics.set(characteristic.uuid, characteristic);
 
     if (!!LED_CHARACTERISTICS[characteristic.uuid]) {
+        const uuid = characteristic.uuid;
         const name = LED_CHARACTERISTICS[characteristic.uuid];
+
+        CreateColorSelector(characteristic.uuid, name, characteristic.uuid);
+
         const colorPicker = document.getElementsByName(name)[0];
 
         if (!!colorPicker) {
             colorPicker.uuid = characteristic.uuid;
-            colorPicker.disabled = false;
         }
 
         const divElement = document.getElementById(name);
-        const sliderR = document.getElementsByName(name + 'R')[0];
-        const sliderG = document.getElementsByName(name + 'G')[0];
-        const sliderB = document.getElementsByName(name + 'B')[0];
-        const sliderW = document.getElementsByName(name + 'W')[0];
-
-        if (!!divElement) {
-			divElement.classList.remove('hidden');
-        }
+        const sliderR = document.getElementById(uuid + 'R');
+        const sliderG = document.getElementById(uuid + 'G');
+        const sliderB = document.getElementById(uuid + 'B');
+        const sliderW = document.getElementById(uuid + 'W');
 
         if (!!sliderR && !!sliderG && !!sliderB && !!sliderW) {
             sliderR.uuid = characteristic.uuid;
             sliderG.uuid = characteristic.uuid;
             sliderB.uuid = characteristic.uuid;
             sliderW.uuid = characteristic.uuid;
-            sliderR.disabled = false;
-            sliderG.disabled = false;
-            sliderB.disabled = false;
-            sliderW.disabled = false;
         }
     }
     else if (characteristic.uuid == CHARACTERISTIC_MODEL_NAME_UUID) {
@@ -218,6 +220,89 @@ function GetSupportedProperties(characteristic) {
 	}
 
 	return '[' + supportedProperties.join(', ') + ']';
+}
+
+function CreateTextElement(htmlText) {
+    const element = document.createElement('span');
+    element.innerHTML = htmlText;
+    return element;
+}
+
+function CreateBRElement() {
+    return document.createElement('br');
+}
+
+function CreateRangeSlider(id, title, uuid, component, containerClass = null) {
+    const element = document.createElement('input');
+    element.type = 'range';
+    element.min = '0';
+    element.max = '255';
+    element.value = '0';
+    element.classList.add('slider');
+    element.id = id;
+    element.oninput = () => OnSliderChange(element);
+    element.dataset = {'uuid': uuid, 'component': component};
+
+    const text = CreateTextElement(title);
+
+    const container = document.createElement('div');
+
+    if (!!containerClass) {
+        container.classList.add('slider-background');
+        container.classList.add(containerClass);
+    }
+
+    container.appendChild(element);
+    container.appendChild(text);
+
+    return container;
+}
+
+function CreateColorSelector(id, name, uuid, componentsList = ['R', 'G', 'B', 'W']) {
+    const div = document.createElement('div');
+    div.id = id;
+    div.classList.add('control-panel');
+
+    const colorPicker = document.createElement('input');
+    colorPicker.id = uuid + 'ColorPicker';
+    colorPicker.type = 'color';
+    colorPicker.oninput = () => OnColorChange(element);
+
+    const colorPickerText = CreateTextElement(' ' + name);
+
+    div.appendChild(colorPicker);
+    div.appendChild(colorPickerText);
+    div.appendChild(CreateBRElement());
+
+    const pElement = document.createElement('p');
+
+    if (componentsList.includes('R')) {
+        pElement.appendChild(CreateRangeSlider(id + 'R', 'Red', uuid, 'R', 'red'));
+    }
+
+    if (componentsList.includes('G')) {
+        pElement.appendChild(CreateRangeSlider(id + 'G', 'Green', uuid, 'G', 'green'));
+    }
+
+    if (componentsList.includes('B')) {
+        pElement.appendChild(CreateRangeSlider(id + 'B', 'Blue', uuid, 'B', 'blue'));
+    }
+
+    if (componentsList.includes('W')) {
+        pElement.appendChild(CreateRangeSlider(id + 'W', 'White', uuid, 'W', 'white'));
+    }
+
+    div.appendChild(pElement);
+    document.body.appendChild(div);
+}
+
+function RemoveAllControls() {
+    const elements = document.querySelectorAll('.control-panel');
+
+    for (let  i = 0; i < elements.length; i++) {
+        const parentNode = elements[i].parentNode;
+        parentNode.removeChild(elements[i]);
+    }
 }
 
 function Init() {

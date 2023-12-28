@@ -1,22 +1,25 @@
 input.slider {
     width: calc(100vw - 5rem);
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
-.slider-background-red {
-	border-radius: 5px;
-	background-color: #ff000044;
+.slider-background {
+    border-radius: 5px;
 }
 
-.slider-background-green {
-	border-radius: 5px;
-	background-color: #00ff0044;
+.slider-background.red {
+    background-color: #ff000044;
 }
 
-.slider-background-blue {
-	border-radius: 5px;
-	background-color: #0000ff44;
+.slider-background.green {
+    background-color: #00ff0044;
+}
+
+.slider-background.blue {
+    background-color: #0000ff44;
 }
 
 .hidden {
-	display:none;
+    display: none;
 }
