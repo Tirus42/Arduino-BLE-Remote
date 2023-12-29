@@ -40,6 +40,7 @@ const LED_CHARACTERISTICS = {
 };
 
 const CHARACTERISTIC_MODEL_NAME_UUID = "928ec7e1-b867-4b7d-904b-d3b8769a7299";
+const CHARACTERISTIC_LEDINFO_UUID = "013201e4-0873-4377-8bff-9a2389af3883";
 
 function OnColorChange(element) {
     SetColorWhenPresent(element.uuid, element.value);
@@ -93,6 +94,8 @@ function SetColorWhenPresent(uuid, color) {
 
     if (ConnectedCharacteristics.has(uuid)) {
         SetColor(ConnectedCharacteristics.get(uuid), rgbw);
+    } else {
+        Log("Try to set value for uuid '" + uuid + "', but not found");
     }
 
     GUIUpdateColorValue(uuid, rgbw);
@@ -130,7 +133,7 @@ function Scan() {
                 Log('>> Characteristic: ' + characteristic.uuid + ' ' +
                 GetSupportedProperties(characteristic));
 
-              AddConnectedCharacteristic(characteristic);
+                AddConnectedCharacteristic(characteristic);
             });
           }));
         });
@@ -150,36 +153,66 @@ function AddConnectedCharacteristic(characteristic) {
         const name = LED_CHARACTERISTICS[characteristic.uuid];
 
         CreateColorSelector(characteristic.uuid, name, characteristic.uuid);
-
-        const colorPicker = document.getElementsByName(name)[0];
-
-        if (!!colorPicker) {
-            colorPicker.uuid = characteristic.uuid;
-        }
-
-        const divElement = document.getElementById(name);
-        const sliderR = document.getElementById(uuid + 'R');
-        const sliderG = document.getElementById(uuid + 'G');
-        const sliderB = document.getElementById(uuid + 'B');
-        const sliderW = document.getElementById(uuid + 'W');
-
-        if (!!sliderR && !!sliderG && !!sliderB && !!sliderW) {
-            sliderR.uuid = characteristic.uuid;
-            sliderG.uuid = characteristic.uuid;
-            sliderB.uuid = characteristic.uuid;
-            sliderW.uuid = characteristic.uuid;
-        }
     }
     else if (characteristic.uuid == CHARACTERISTIC_MODEL_NAME_UUID) {
         characteristic.readValue().then((dataView) => {
-			console.log(dataView);
-
 			const dec = new TextDecoder("utf-8");
 			const decoded = dec.decode(dataView);
 
 			document.getElementById('modelName').value = decoded;
 		})
     }
+    else if (characteristic.uuid == CHARACTERISTIC_LEDINFO_UUID) {
+        characteristic.startNotifications().then(_ => {
+            function handleFunc(event) {
+                const value = event.target.value;
+
+                const view = new Uint8Array(value.buffer);
+
+                if (view[0] == 0x01) {
+                    const rest = value.buffer.slice(1);
+
+                    const dec = new TextDecoder("utf-8");
+                    const decoded = dec.decode(rest);
+
+                    const params = decoded.split(':');
+
+                    const uuid = params[0];
+                    const name = params[1];
+                    const colorChannels = params[2];
+
+                    Log("Custom UUID:" + uuid);
+
+                    RemoveColorSelectorWhenExists(uuid);
+                    CreateColorSelector(uuid, name, uuid);
+                }
+            }
+
+            characteristic.addEventListener('characteristicvaluechanged', handleFunc);
+        });
+
+        SendBLERequest(characteristic, "list");
+    }
+}
+
+function EncodeUTF8String(str) {
+    const enc = new TextEncoder();
+    return enc.encode(str);
+}
+
+function MergeUint8Arrays(array1, array2) {
+    const result = new Uint8Array(array1.length + array2.length);
+    result.set(array1);
+    result.set(array2, array1.length);
+    return result;
+}
+
+function SendBLERequest(characteristic, cmd) {
+    const header = new Uint8Array(1);
+    header[0] = 0x00;
+
+    const request = MergeUint8Arrays(header, EncodeUTF8String(cmd));
+    return characteristic.writeValue(request);
 }
 
 function SetColor(characteristic, rgbw) {
@@ -242,6 +275,7 @@ function CreateRangeSlider(id, title, uuid, component, containerClass = null) {
     element.id = id;
     element.oninput = () => OnSliderChange(element);
     element.dataset = {'uuid': uuid, 'component': component};
+    element.uuid = uuid;
 
     const text = CreateTextElement(title);
 
@@ -266,7 +300,8 @@ function CreateColorSelector(id, name, uuid, componentsList = ['R', 'G', 'B', 'W
     const colorPicker = document.createElement('input');
     colorPicker.id = uuid + 'ColorPicker';
     colorPicker.type = 'color';
-    colorPicker.oninput = () => OnColorChange(element);
+    colorPicker.oninput = () => OnColorChange(colorPicker);
+    colorPicker.uuid = uuid;
 
     const colorPickerText = CreateTextElement(' ' + name);
 
@@ -294,6 +329,14 @@ function CreateColorSelector(id, name, uuid, componentsList = ['R', 'G', 'B', 'W
 
     div.appendChild(pElement);
     document.body.appendChild(div);
+}
+
+function RemoveColorSelectorWhenExists(id) {
+    const element = document.getElementById(id);
+
+    if (!!element) {
+        element.parentNode.removeChild(element);
+    }
 }
 
 function RemoveAllControls() {
