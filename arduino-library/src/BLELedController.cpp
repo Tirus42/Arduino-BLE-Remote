@@ -64,6 +64,9 @@ BLELedController::BLELedController(const char* deviceName, const char* modelName
 }
 
 BLELedController::~BLELedController() {
+	// Remove characteristics from global service instance.
+	bleService.clear();
+
 	BLE.end();
 
 	// Unset global instance
