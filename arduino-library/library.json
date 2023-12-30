@@ -1,6 +1,6 @@
 {
   "name": "BLE Remote",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "BLE peripheral implementation for remote control of custom defined color values.",
   "keywords": "ble, remote, control, led",
   "repository":
@@ -18,6 +18,7 @@
   "license": "GPL-3.0-or-later",
   "homepage": "https://github.com/Tirus42/Arduino-BLE-Remote",
   "dependencies": {
+    "arduino-libraries/ArduinoBLE": "^1.3.6",
     "tirus/LedControlAndAnimation": "^1.3.0",
     "tirus/UUID": "1.0.0"
   },
