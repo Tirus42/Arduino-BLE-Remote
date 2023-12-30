@@ -191,7 +191,14 @@ function AddConnectedCharacteristic(characteristic) {
             characteristic.addEventListener('characteristicvaluechanged', handleFunc);
         });
 
-        SendBLERequest(characteristic, "list");
+        SendBLERequest(characteristic, "list").then(_ => {
+        }, _ => {
+            Log("Info query failure?: " + _);
+            Log("Try again ...");
+            // This is a workaround for android, because most times the first request failes with a "unknown reason"
+            // Also see https://github.com/LedgerHQ/ledgerjs/issues/352
+            SendBLERequest(characteristic, "list");
+        });
     }
 }
 
