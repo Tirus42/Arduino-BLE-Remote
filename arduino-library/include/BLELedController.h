@@ -37,8 +37,8 @@ class BLELedController {
 		void begin();
 
 		void addRGBWCharacteristic(const std::string& name, std::function<void(RGBW newColor)> callback);
-		void setOnConnectCallback(std::function<void()> onConnectCallback);
-		void setOnDisconnectCallback(std::function<void()> onDisconnectCallback);
+		void setOnConnectCallback(std::function<void(const char*)> onConnectCallback);
+		void setOnDisconnectCallback(std::function<void(const char*)> onDisconnectCallback);
 
 		void update();
 };

@@ -1,6 +1,6 @@
 {
   "name": "BLE Remote",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "BLE peripheral implementation for remote control of custom defined color values.",
   "keywords": "ble, remote, control, led",
   "repository":

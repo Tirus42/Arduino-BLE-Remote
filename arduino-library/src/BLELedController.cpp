@@ -121,6 +121,14 @@ void BLELedController::addRGBWCharacteristic(const std::string& name, std::funct
 	uuidToCharacteristicMap.insert({uuid, mapping});
 }
 
+void BLELedController::setOnConnectCallback(std::function<void(const char*)> onConnectCallback) {
+    this->onConnectCallback = onConnectCallback;
+}
+
+void BLELedController::setOnDisconnectCallback(std::function<void(const char*)> onDisconnectCallback) {
+    this->onDisconnectCallback = onDisconnectCallback;
+}
+
 /////////////////////
 // Private methods //
 /////////////////////
