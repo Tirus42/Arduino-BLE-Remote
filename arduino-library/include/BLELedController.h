@@ -7,28 +7,30 @@
 #include <functional>
 #include <string>
 
-class BLEDevice;
-class BLECharacteristic;
+class NimBLECharacteristic;
 
 class BLELedController {
 	private:
 		struct LedMappingData;
+		struct InternalData;
+		struct CharacteristicCallbacks;
 
 		std::function<void(const char* mac)> onConnectCallback;
 		std::function<void(const char* mac)> onDisconnectCallback;
 
 		std::map<UUID, LedMappingData> uuidToCharacteristicMap;
+		std::unique_ptr<InternalData> internal;
 
-		void onCharacteristicWritten(BLEDevice device, BLECharacteristic characteristic);
+		void onCharacteristicWritten(NimBLECharacteristic* pCharacteristic);
 
-		void handleLedInfoRequest(BLECharacteristic& characteristic);
-		void writeLedInfoDataV1(BLECharacteristic& characteristic);
+		void handleLedInfoRequest(NimBLECharacteristic& characteristic);
+		void writeLedInfoDataV1(NimBLECharacteristic& characteristic);
 
-		static void OnCharacteristicWritten(BLEDevice device, BLECharacteristic characteristic);
-		static void OnConnect(BLEDevice bleDevice);
-		static void OnDisconnect(BLEDevice bleDevice);
+		static void OnCharacteristicWritten(NimBLECharacteristic* pCharacteristic);
+		static void OnConnect(const char* remoteAddr);
+		static void OnDisconnect(const char* remoteAddr);
 
-		static RGBW ExtractRGBW(const BLECharacteristic& characteristic);
+		static RGBW ExtractRGBW(const NimBLECharacteristic& characteristic);
 
 	public:
 		BLELedController(const char* deviceName, const char* modelName = nullptr);
@@ -40,5 +42,9 @@ class BLELedController {
 		void setOnConnectCallback(std::function<void(const char*)> onConnectCallback);
 		void setOnDisconnectCallback(std::function<void(const char*)> onDisconnectCallback);
 
+		[[deprecated("Not required anymore, will be removed in a future version.")]]
 		void update();
+
+		/// \returns the amount of open connections
+		size_t getConnectedCount() const;
 };

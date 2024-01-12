@@ -1,7 +1,6 @@
 #include "BLELedController.h"
 
-#pragma GCC diagnostic ignored "-Wreorder"
-#include <ArduinoBLE.h>
+#include <NimBLEDevice.h>
 
 static BLELedController* instance = nullptr;
 
@@ -21,29 +20,87 @@ static const std::map<std::string, UUID> WELL_KNOWN_LED_CHARACTERISTICS = {
 	{"Time Stone", "03c7757e-be1c-42ef-9b58-c4be71fd3a7d"},
 };
 
-BLEService bleService{"a6a2fc07-815c-4262-97a9-1cef5181a1e4"};
-BLECharacteristic modelNameCharacteristic {"928ec7e1-b867-4b7d-904b-d3b8769a7299", BLERead, 128};
-BLECharacteristic ledInfoCharacteristic("013201e4-0873-4377-8bff-9a2389af3883", BLEWrite | BLENotify, 128);
+static const BLEUUID SERVICE_UUID("a6a2fc07-815c-4262-97a9-1cef5181a1e4");
 
-static std::string DEVICE_NAME = "";
+static const BLEUUID MODEL_NAME_CHARACTERISTIC_UUID("928ec7e1-b867-4b7d-904b-d3b8769a7299");
+static const BLEUUID LED_INFO_CHARACTERISTIC_UUID("013201e4-0873-4377-8bff-9a2389af3883");
+
+struct BLELedController::CharacteristicCallbacks : public BLECharacteristicCallbacks {
+	virtual void onWrite(BLECharacteristic* pCharacteristic/*, esp_ble_gatts_cb_param_t* param*/) override {
+		instance->onCharacteristicWritten(pCharacteristic);
+	}
+} callbackHandler;
 
 struct BLELedController::LedMappingData {
 	std::function<void(RGBW newColor)> callback;
 	std::string name;
 	std::shared_ptr<std::string> uuidString;
-	BLECharacteristic characteristic;
+	BLECharacteristic* characteristic;
 
-	LedMappingData(UUID uuid, std::function<void(RGBW newColor)> callback, std::string name) :
+	LedMappingData(UUID uuid, std::function<void(RGBW newColor)> callback, std::string name, BLEService* pService) :
 		callback(callback),
 		name(name),
 		uuidString(std::make_shared<std::string>(uuid.toString().c_str())),
-		characteristic(uuidString->c_str(), BLEWrite, 4) {}
+		characteristic(pService->createCharacteristic(uuidString->c_str(), NIMBLE_PROPERTY::WRITE)) {}
+};
+
+static std::string BleMacToString(const ble_addr_t& addr) {
+	char buffer[6 * 2 + 5 + 1];
+	snprintf(buffer, sizeof(buffer), "%02X:%02X:%02X:%02X:%02X:%02X",
+			 addr.val[5], addr.val[4], addr.val[3], addr.val[2], addr.val[1], addr.val[0]);
+
+	return std::string(buffer);
+}
+
+struct BLELedController::InternalData : public BLEServerCallbacks {
+	BLEServer* pServer;
+	BLEService* pService;
+	BLECharacteristic* modelNameCharacteristic;
+	BLECharacteristic* ledInfoCharacteristic;
+
+	InternalData() :
+		pServer(BLEDevice::createServer()),
+		pService(pServer->createService(SERVICE_UUID)) {
+
+		modelNameCharacteristic = pService->createCharacteristic(MODEL_NAME_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ);
+		ledInfoCharacteristic = pService->createCharacteristic(LED_INFO_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
+
+		pServer->setCallbacks(this);
+	}
+
+	~InternalData() {
+		// We must remove the callback-ptr or the server will try to delete this
+		pServer->setCallbacks(nullptr);
+
+		pServer->removeService(pService, true);
+	}
+
+	void addCharacteristic(BLECharacteristic* characteristic) {
+		pService->addCharacteristic(characteristic);
+	}
+
+	void removeCharacteristic(BLECharacteristic* characteristic) {
+		pService->removeCharacteristic(characteristic, false);
+	}
+
+	virtual void onConnect(BLEServer* _server, ble_gap_conn_desc* param) override {
+		instance->OnConnect(BleMacToString(param->peer_ota_addr).c_str());
+	}
+
+	virtual void onDisconnect(BLEServer* _server, ble_gap_conn_desc* param) override {
+		instance->OnDisconnect(BleMacToString(param->peer_ota_addr).c_str());
+	}
 };
 
 BLELedController::BLELedController(const char* deviceName, const char* modelName) :
 	onConnectCallback(),
 	onDisconnectCallback(),
-	uuidToCharacteristicMap() {
+	uuidToCharacteristicMap(),
+	internal() {
+
+	BLEDevice::init(deviceName);
+
+	internal.reset(new InternalData());
 
 	// Set global instance
 	instance = this;
@@ -52,56 +109,35 @@ BLELedController::BLELedController(const char* deviceName, const char* modelName
 		modelName = deviceName;
 	}
 
-	DEVICE_NAME = deviceName;
-
-	modelNameCharacteristic.setValue(modelName);
-
-	BLE.begin();
-	BLE.setLocalName(deviceName);
-
-	BLE.setEventHandler(BLEConnected, OnConnect);
-	BLE.setEventHandler(BLEDisconnected, OnDisconnect);
+	internal->modelNameCharacteristic->setValue(reinterpret_cast<const uint8_t*>(modelName), strlen(modelName));
 }
 
 BLELedController::~BLELedController() {
-	// Remove characteristics from global service instance.
-	bleService.clear();
+	internal.reset();
 
-	BLE.end();
+	BLEDevice::deinit(true);
 
 	// Unset global instance
 	instance = nullptr;
 }
 
 void BLELedController::begin() {
-	for (auto iter : uuidToCharacteristicMap) {
-		iter.second.characteristic.setEventHandler(BLEWritten, &OnCharacteristicWritten);
-
-		bleService.addCharacteristic(iter.second.characteristic);
+	for (auto& iter : uuidToCharacteristicMap) {
+		iter.second.characteristic->setCallbacks(&callbackHandler);
 	}
 
-	bleService.addCharacteristic(modelNameCharacteristic);
+	internal->ledInfoCharacteristic->setCallbacks(&callbackHandler);
 
-	bleService.addCharacteristic(ledInfoCharacteristic);
-	ledInfoCharacteristic.setEventHandler(BLEWritten, &OnCharacteristicWritten);
+	internal->pService->start();
 
-	BLE.addService(bleService);
-
-	// Build advertising data packet
-	BLEAdvertisingData advData;
-
-	advData.setLocalName(DEVICE_NAME.c_str());
-
-	// Set parameters for advertising packet
-	advData.setAdvertisedService(bleService);
-	// Copy set parameters in the actual advertising packet
-	BLE.setAdvertisingData(advData);
-	BLE.setScanResponseData(advData);
-	BLE.advertise();
+	// Start advertising
+	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+	pAdvertising->addServiceUUID(SERVICE_UUID);
+	internal->pServer->getAdvertising()->start();
 }
 
 void BLELedController::update() {
-	BLE.poll(0);
+    // Nothing to do here (deprecated)
 }
 
 void BLELedController::addRGBWCharacteristic(const std::string& name, std::function<void(RGBW newColor)> callback) {
@@ -115,45 +151,48 @@ void BLELedController::addRGBWCharacteristic(const std::string& name, std::funct
 		uuid.generate();
 	}
 
-	Serial.printf("Create RGBW mapping with name '%s' on uuid '%s'\n", name.c_str(), uuid.toString().c_str());
+	Serial.printf("Create RGBW mapping with name '%s' on UUID '%s'\n", name.c_str(), uuid.toString().c_str());
 
-	LedMappingData mapping(uuid, callback, name);
-	uuidToCharacteristicMap.insert({uuid, mapping});
+	LedMappingData mapping(uuid, callback, name, internal->pService);
+	uuidToCharacteristicMap.insert({uuid, std::move(mapping)});
 }
 
 void BLELedController::setOnConnectCallback(std::function<void(const char*)> onConnectCallback) {
-    this->onConnectCallback = onConnectCallback;
+	this->onConnectCallback = onConnectCallback;
 }
 
 void BLELedController::setOnDisconnectCallback(std::function<void(const char*)> onDisconnectCallback) {
-    this->onDisconnectCallback = onDisconnectCallback;
+	this->onDisconnectCallback = onDisconnectCallback;
+}
+
+size_t BLELedController::getConnectedCount() const {
+    return internal->pServer->getConnectedCount();
 }
 
 /////////////////////
 // Private methods //
 /////////////////////
 
-void BLELedController::onCharacteristicWritten(BLEDevice device, BLECharacteristic characteristic) {
-	auto iter = uuidToCharacteristicMap.find(characteristic.uuid());
+void BLELedController::onCharacteristicWritten(BLECharacteristic* characteristic) {
+	auto iter = uuidToCharacteristicMap.find(UUID(characteristic->getUUID().toString().c_str()));
 
 	if (iter != uuidToCharacteristicMap.end()) {
-		RGBW newColor = ExtractRGBW(characteristic);
+		RGBW newColor = ExtractRGBW(*characteristic);
 
 		iter->second.callback(newColor);
 
-	} else if (strcmp(characteristic.uuid(), ledInfoCharacteristic.uuid()) == 0) {
-		handleLedInfoRequest(characteristic);
+	} else if (characteristic->getUUID().equals(internal->ledInfoCharacteristic->getUUID())) {
+		handleLedInfoRequest(*characteristic);
 	} else {
-		Serial.printf("Unhandled characteristic with uuid: '%s'\n", characteristic.uuid());
+		Serial.printf("Unhandled characteristic with UUID: '%s'\n", characteristic->getUUID().toString().c_str());
 	}
 }
 
 void BLELedController::handleLedInfoRequest(BLECharacteristic& characteristic) {
-	if (characteristic.valueLength() >= 1 && characteristic.value()[0] == 0x00) {
-		std::vector<uint8_t> data(characteristic.valueLength());
-		characteristic.readValue(data.data(), data.size());
+	if (characteristic.getDataLength() >= 1 && characteristic.getValue().data()[0] == 0x00) {
+		NimBLEAttValue value = characteristic.getValue();
 
-		std::string cmd(data.begin() + 1, data.end());
+		std::string cmd(value.begin() + 1, value.end());
 
 		if (cmd == "list") {
 			writeLedInfoDataV1(characteristic);
@@ -164,41 +203,44 @@ void BLELedController::handleLedInfoRequest(BLECharacteristic& characteristic) {
 }
 
 void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) {
-	for (auto i : uuidToCharacteristicMap) {
+	for (auto& i : uuidToCharacteristicMap) {
 		uint8_t buffer[128];
 		buffer[0] = 0x01;
 
 		char* charPtr = reinterpret_cast<char*>(buffer + 1);
 		size_t length = 1 + snprintf(charPtr, sizeof(buffer) - 1, "%s:%s:RGBW", i.first.toString().c_str(), i.second.name.c_str());
 
-		ledInfoCharacteristic.writeValue(buffer, length);
+		internal->ledInfoCharacteristic->notify(buffer, length);
 	}
 }
 
-void BLELedController::OnCharacteristicWritten(BLEDevice device, BLECharacteristic characteristic) {
+void BLELedController::OnCharacteristicWritten(BLECharacteristic* characteristic) {
 	if (instance) {
-		instance->onCharacteristicWritten(device, characteristic);
+		instance->onCharacteristicWritten(characteristic);
 	}
 }
 
-void BLELedController::OnConnect(BLEDevice bleDevice) {
+void BLELedController::OnConnect(const char* remoteAddr) {
 	if (instance && instance->onConnectCallback) {
-		instance->onConnectCallback(bleDevice.address().c_str());
+		instance->onConnectCallback(remoteAddr);
 	}
 }
 
-void BLELedController::OnDisconnect(BLEDevice bleDevice) {
+void BLELedController::OnDisconnect(const char* remoteAddr) {
 	if (instance && instance->onDisconnectCallback) {
-		instance->onDisconnectCallback(bleDevice.address().c_str());
+		instance->onDisconnectCallback(remoteAddr);
 	}
 }
 
 RGBW BLELedController::ExtractRGBW(const BLECharacteristic& characteristic) {
-	if (characteristic.valueLength() < 4) {
+	// TODO: Pull request on author to fix this missing const
+	NimBLEAttValue value = const_cast<BLECharacteristic&>(characteristic).getValue();
+
+	if (value.length() < 4) {
 		return RGBW();
 	}
 
-	const uint8_t* ptr = characteristic.value();
+	const uint8_t* ptr = value.data();
 
 	RGBW newColor;
 	memcpy(&newColor, ptr, 4);
