@@ -20,6 +20,27 @@ input.slider {
     background-color: #0000ff44;
 }
 
+.slider-background.white {
+    background-color: #ffffffbb;
+}
+
 .hidden {
     display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        background: #111;
+        color: #eee;
+    }
+
+    input, textarea {
+        background-color: #111;
+        color: var(--color);
+    }
+
+    .slider-background.white {
+        background-color: #ffffffbb;
+        color: black;
+    }
 }
