@@ -2,6 +2,8 @@
 
 #include <NimBLEDevice.h>
 
+#include <mbedtls/md5.h>
+
 static BLELedController* instance = nullptr;
 
 static const std::map<std::string, UUID> WELL_KNOWN_LED_CHARACTERISTICS = {
@@ -148,7 +150,7 @@ void BLELedController::addRGBWCharacteristic(const std::string& name, std::funct
 	if (iter != WELL_KNOWN_LED_CHARACTERISTICS.end()) {
 		uuid = iter->second;
 	} else {
-		uuid.generate();
+		uuid = GenerateUUIDByName(name);
 	}
 
 	Serial.printf("Create RGBW mapping with name '%s' on UUID '%s'\n", name.c_str(), uuid.toString().c_str());
@@ -167,6 +169,22 @@ void BLELedController::setOnDisconnectCallback(std::function<void(const char*)> 
 
 size_t BLELedController::getConnectedCount() const {
     return internal->pServer->getConnectedCount();
+}
+
+UUID BLELedController::GenerateUUIDByName(const std::string& name) {
+    mbedtls_md5_context ctx;
+
+    mbedtls_md5_init(&ctx);
+
+    mbedtls_md5_starts_ret(&ctx);
+    mbedtls_md5_update_ret(&ctx, reinterpret_cast<const uint8_t*>(name.c_str()), name.length());
+
+    UUID result;
+
+    mbedtls_md5_finish(&ctx, result.bytes.data());
+    mbedtls_md5_free(&ctx);
+
+    return result;
 }
 
 /////////////////////

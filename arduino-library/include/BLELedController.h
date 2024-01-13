@@ -38,6 +38,11 @@ class BLELedController {
 
 		void begin();
 
+		/**
+		* Adds a RGBW control with the given name.
+		* The BLE-Characteristic-UUID will be derived from the given name and stay constant
+		* as long as the name stays the same.
+		*/
 		void addRGBWCharacteristic(const std::string& name, std::function<void(RGBW newColor)> callback);
 		void setOnConnectCallback(std::function<void(const char*)> onConnectCallback);
 		void setOnDisconnectCallback(std::function<void(const char*)> onDisconnectCallback);
@@ -47,4 +52,11 @@ class BLELedController {
 
 		/// \returns the amount of open connections
 		size_t getConnectedCount() const;
+
+		/**
+		* Generates a specific UUID out of a name.
+		* The same name will result in the same UUID.
+		* As name any string can be supplied. Internally a hash function is used.
+		*/
+		static UUID GenerateUUIDByName(const std::string& name);
 };
