@@ -1,5 +1,6 @@
 // Important: Needs the "bluetooth" permission when used in a iframe
 
+let ConnectedDevice = null;
 const ConnectedCharacteristics = new Map();
 const PendingCharacteristicPromises = new Map();
 
@@ -60,6 +61,22 @@ function OnSliderChange(element) {
     SetColorWhenPresent(element.uuid, rgbw);
 }
 
+function OnConnected(device) {
+    document.getElementById('btnDisconnect').disabled = false;
+
+    ConnectedDevice = device;
+}
+
+function OnDisconnected() {
+    document.getElementById('btnDisconnect').disabled = true;
+
+    ConnectedDevice = null;
+
+    Log("Disconnected");
+
+    RemoveAllControls();
+}
+
 function ToHexColor(color) {
     return '#' + parseInt(color[0]).toString(16).padStart(2, '0')
                + parseInt(color[1]).toString(16).padStart(2, '0')
@@ -118,10 +135,15 @@ function Scan() {
         	services: [SERVICE_UUID]
         }]
       }).then(device => {
-            RemoveAllControls();
-            return device.gatt.connect();
+        Log("Connected to device '" + device.name + "'");
+
+        device.addEventListener('gattserverdisconnected', OnDisconnected);
+
+        OnConnected(device)
+        RemoveAllControls();
+        return device.gatt.connect();
       }).then(server => {
-      	Log("Connected, Read Services ...");
+        Log("Getting Services ...");
         return server.getPrimaryServices();
       }).then(services => {
       	Log("Gettings Characteristics ...");
@@ -143,6 +165,15 @@ function Scan() {
    catch (ex) {
         Log('Error: ' + ex);
    }
+}
+
+function Disconnect() {
+    if (!ConnectedDevice) {
+        return;
+    }
+
+    Log("Disconnecting from '" + ConnectedDevice.name + "' ...");
+    ConnectedDevice.gatt.disconnect();
 }
 
 function AddConnectedCharacteristic(characteristic) {
@@ -353,6 +384,8 @@ function RemoveAllControls() {
         const parentNode = elements[i].parentNode;
         parentNode.removeChild(elements[i]);
     }
+
+    ConnectedCharacteristics.clear();
 }
 
 function Init() {
