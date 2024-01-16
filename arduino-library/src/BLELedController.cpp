@@ -38,12 +38,14 @@ struct BLELedController::LedMappingData {
 	std::string name;
 	std::shared_ptr<std::string> uuidString;
 	BLECharacteristic* characteristic;
+	ColorChannels colorChannels;
 
-	LedMappingData(UUID uuid, std::function<void(RGBW newColor)> callback, std::string name, BLEService* pService) :
+	LedMappingData(UUID uuid, std::function<void(RGBW newColor)> callback, std::string name, BLEService* pService, ColorChannels colorChannels) :
 		callback(callback),
 		name(name),
 		uuidString(std::make_shared<std::string>(uuid.toString().c_str())),
-		characteristic(pService->createCharacteristic(uuidString->c_str(), NIMBLE_PROPERTY::WRITE)) {}
+		characteristic(pService->createCharacteristic(uuidString->c_str(), NIMBLE_PROPERTY::WRITE)),
+		colorChannels(colorChannels) {}
 };
 
 static std::string BleMacToString(const ble_addr_t& addr) {
@@ -142,7 +144,7 @@ void BLELedController::update() {
     // Nothing to do here (deprecated)
 }
 
-void BLELedController::addRGBWCharacteristic(const std::string& name, std::function<void(RGBW newColor)> callback) {
+void BLELedController::addRGBWCharacteristic(const std::string& name, std::function<void(RGBW newColor)> callback, const ColorChannels& colorChannels) {
 	auto iter = WELL_KNOWN_LED_CHARACTERISTICS.find(name);
 
 	UUID uuid(false);
@@ -155,7 +157,7 @@ void BLELedController::addRGBWCharacteristic(const std::string& name, std::funct
 
 	Serial.printf("Create RGBW mapping with name '%s' on UUID '%s'\n", name.c_str(), uuid.toString().c_str());
 
-	LedMappingData mapping(uuid, callback, name, internal->pService);
+	LedMappingData mapping(uuid, callback, name, internal->pService, colorChannels);
 	uuidToCharacteristicMap.insert({uuid, std::move(mapping)});
 }
 

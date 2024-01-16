@@ -1,6 +1,7 @@
 #pragma once
 
 #include <RGBW.h>
+#include <ColorChannels.h>
 
 #include <UUID.h>
 
@@ -43,7 +44,7 @@ class BLELedController {
 		* The BLE-Characteristic-UUID will be derived from the given name and stay constant
 		* as long as the name stays the same.
 		*/
-		void addRGBWCharacteristic(const std::string& name, std::function<void(RGBW newColor)> callback);
+		void addRGBWCharacteristic(const std::string& name, std::function<void(RGBW newColor)> callback, const ColorChannels& channels = "RGBW");
 		void setOnConnectCallback(std::function<void(const char*)> onConnectCallback);
 		void setOnDisconnectCallback(std::function<void(const char*)> onDisconnectCallback);
 
