@@ -42,3 +42,26 @@ function ExtractRGB(color: string): RGBColor {
 
 	return new RGBColor(r, g, b);
 }
+
+class ColorChannels {
+	r: boolean;
+	g: boolean;
+	b: boolean;
+	w: boolean;
+
+	constructor(r: boolean = true, g: boolean = true, b: boolean = true, w: boolean = true) {
+		this.r = r;
+		this.g = g;
+		this.b = b;
+		this.w = w;
+	}
+}
+
+function ExtractColorChannels(inputString: string) : ColorChannels {
+	const r = inputString.includes('R');
+	const g = inputString.includes('G');
+	const b = inputString.includes('B');
+	const w = inputString.includes('W');
+
+	return new ColorChannels(r, g, b, w);
+}

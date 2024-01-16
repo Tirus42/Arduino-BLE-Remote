@@ -33,8 +33,17 @@ function CreateBRElement() {
     return document.createElement('br');
 }
 
+class SliderElement {
+    slider: HTMLInputElement;
+    container: HTMLDivElement;
 
-function CreateRangeSlider(id: string, title: string, uuid: string, onColorChangeFunction: (uuid: string, newColor: RGBWColor) => any, containerClass: string | null = null) {
+    constructor(slider: HTMLInputElement, container: HTMLDivElement) {
+        this.slider = slider;
+        this.container = container;
+    }
+}
+
+function CreateRangeSlider(id: string, title: string, uuid: string, onColorChangeFunction: (uuid: string, newColor: RGBWColor) => any, containerClass: string | null = null) : SliderElement {
     const element = document.createElement('input');
     element.type = 'range';
     element.min = '0';
@@ -62,10 +71,10 @@ function CreateRangeSlider(id: string, title: string, uuid: string, onColorChang
     container.appendChild(element);
     container.appendChild(text);
 
-    return container;
+    return new SliderElement(element, container);
 }
 
-function CreateColorSelector(id: string, name: string, uuid: string, onColorChangeFunction: (uuid: string, newColor: RGBWColor) => any, componentsList = ['R', 'G', 'B', 'W']) {
+function CreateColorSelector(id: string, name: string, uuid: string, onColorChangeFunction: (uuid: string, newColor: RGBWColor) => any, colorChannels: ColorChannels) {
     const div = document.createElement('div');
     div.id = id;
     div.classList.add('control-panel');
@@ -89,26 +98,35 @@ function CreateColorSelector(id: string, name: string, uuid: string, onColorChan
 
     const pElement = document.createElement('p');
 
-    if (componentsList.includes('R')) {
-        pElement.appendChild(CreateRangeSlider(id + 'R', 'Red', uuid, onColorChangeFunction, 'red'));
+    const sliderR = CreateRangeSlider(id + 'R', 'Red', uuid, onColorChangeFunction, 'red');
+    const sliderG = CreateRangeSlider(id + 'G', 'Green', uuid, onColorChangeFunction, 'green');
+    const sliderB = CreateRangeSlider(id + 'B', 'Blue', uuid, onColorChangeFunction, 'blue');
+    const sliderW = CreateRangeSlider(id + 'W', 'White', uuid, onColorChangeFunction, 'white');
+
+    pElement.appendChild(sliderR.container);
+    pElement.appendChild(sliderG.container);
+    pElement.appendChild(sliderB.container);
+    pElement.appendChild(sliderW.container);
+
+    if (!colorChannels.r) {
+        sliderR.container.classList.add('hidden');
     }
 
-    if (componentsList.includes('G')) {
-        pElement.appendChild(CreateRangeSlider(id + 'G', 'Green', uuid, onColorChangeFunction, 'green'));
+    if (!colorChannels.g) {
+        sliderG.container.classList.add('hidden');
     }
 
-    if (componentsList.includes('B')) {
-        pElement.appendChild(CreateRangeSlider(id + 'B', 'Blue', uuid, onColorChangeFunction, 'blue'));
+    if (!colorChannels.b) {
+        sliderB.container.classList.add('hidden');
     }
 
-    if (componentsList.includes('W')) {
-        pElement.appendChild(CreateRangeSlider(id + 'W', 'White', uuid, onColorChangeFunction, 'white'));
+    if (!colorChannels.w) {
+        sliderW.container.classList.add('hidden');
     }
 
     div.appendChild(pElement);
     document.body.appendChild(div);
 }
-
 
 function RemoveAllControls() {
     const elements = document.querySelectorAll('.control-panel');

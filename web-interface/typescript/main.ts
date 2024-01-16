@@ -81,7 +81,7 @@ function AddConnectedCharacteristic(characteristic: BluetoothRemoteGATTCharacter
         const uuid = characteristic.uuid;
         const name = LED_CHARACTERISTICS.get(characteristic.uuid);
 
-        CreateColorSelector(characteristic.uuid, knownName, characteristic.uuid, OnColorChange);
+        CreateColorSelector(characteristic.uuid, knownName, characteristic.uuid, OnColorChange, new ColorChannels());
     }
     else if (characteristic.uuid == CHARACTERISTIC_MODEL_NAME_UUID) {
         characteristic.readValue().then((dataView) => {
@@ -119,10 +119,12 @@ function AddConnectedCharacteristic(characteristic: BluetoothRemoteGATTCharacter
                     const name = params[1];
                     const colorChannels = params[2];
 
-                    Log("Custom UUID:" + uuid);
+                    Log("Custom UUID [" + uuid + "] with color channels: " + colorChannels);
+
+                    const colors: ColorChannels = ExtractColorChannels(colorChannels);
 
                     RemoveColorSelectorWhenExists(uuid);
-                    CreateColorSelector(uuid, name, uuid, OnColorChange);
+                    CreateColorSelector(uuid, name, uuid, OnColorChange, colors);
                 }
             }
 
