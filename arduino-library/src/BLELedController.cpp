@@ -227,8 +227,19 @@ void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) {
 		uint8_t buffer[128];
 		buffer[0] = 0x01;
 
+		std::string channelString;
+
+		if (i.second.colorChannels.r)
+			channelString += "R";
+		if (i.second.colorChannels.g)
+			channelString += "G";
+		if (i.second.colorChannels.b)
+			channelString += "B";
+		if (i.second.colorChannels.w)
+			channelString += "W";
+
 		char* charPtr = reinterpret_cast<char*>(buffer + 1);
-		size_t length = 1 + snprintf(charPtr, sizeof(buffer) - 1, "%s:%s:RGBW", i.first.toString().c_str(), i.second.name.c_str());
+		size_t length = 1 + snprintf(charPtr, sizeof(buffer) - 1, "%s:%s:%s", i.first.toString().c_str(), i.second.name.c_str(), channelString.c_str());
 
 		internal->ledInfoCharacteristic->notify(buffer, length);
 	}
