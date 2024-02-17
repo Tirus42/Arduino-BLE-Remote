@@ -67,10 +67,11 @@
     "web-bluetooth-def.ts",
 
     // code
-    "main.ts",
+    "ui.ts",
     "globals.ts",
 	"util.ts",
 	"color.ts",
-	"ui.ts"
+	"html.ts",
+    "main.ts"
   ]
 }

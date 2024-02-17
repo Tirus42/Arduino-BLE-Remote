@@ -1,182 +1,278 @@
-function UI_GetModelNameField() : HTMLInputElement {
-    const element = <HTMLInputElement> document.getElementById('modelName');
+enum UIControlElementType {
+	Group,
+	ColorSelector,
+}
 
-	if (element == null) {
-		Log("ModelName UI element not found!");
-        throw "ModelName UI element not found!"
+abstract class AUIControlElement {
+	type: UIControlElementType;
+	name: string;
+	parent : UIElementGroup | null;
+
+	constructor(type: UIControlElementType, name: string, parent: UIElementGroup | null) {
+		this.type = type;
+		this.name = name;
+		this.parent = parent;
 	}
 
-	return element;
-}
-
-function SetModelName(modelName: string) {
-    UI_GetModelNameField().innerText = modelName;
-}
-
-function UI_GetDisconnectButton() : HTMLButtonElement {
-	const btn = <HTMLButtonElement> document.getElementById('btnDisconnect');
-
-	if (!btn) {
-		throw "UI element of disconnect button not found!";
+	destroy() {
+		if (this.parent) {
+			if (!this.parent.eraseChildByRef(this)) {
+				throw "Failed to remove child from parent, child name: " + this.getAbsoluteName();
+			}
+		}
 	}
 
-	return btn;
+	abstract getDomRootElement() : HTMLElement;
+
+	getParent() : UIElementGroup | null {
+		return this.parent;
+	}
+
+	getName() : string {
+		return this.name;
+	}
+
+	getAbsoluteName() : string[] {
+		const ret = this.parent ? this.parent.getAbsoluteName() : [];
+		ret.push(this.name);
+		return ret;
+	}
+
+	onInputValueChange(sourceElement: AUIControlElement) {
+		if (this.parent) {
+			this.parent.onInputValueChange(sourceElement)
+		} else {
+			Log("Unhanded change event on " + sourceElement.getAbsoluteName());
+		}
+	}
 }
 
-function CreateTextElement(htmlText: string) {
-    const element = document.createElement('span');
-    element.innerHTML = htmlText;
-    return element;
+class UIElementGroup extends AUIControlElement {
+	container: HTMLDivElement;
+	headerDiv : HTMLDivElement;
+	elements: AUIControlElement[];
+
+	constructor(name: string, parent: UIElementGroup | null) {
+		super(UIControlElementType.Group, name, parent);
+
+		this.container = HTML_CreateDivElement('bevel');
+		this.headerDiv = HTML_CreateDivElement('span');
+		this.elements = []
+
+		{
+			this.addToGroupHeader(HTML_CreateSpanElement(this.name));
+			this.container.appendChild(this.headerDiv);
+		}
+
+		let parentHTMLElement = parent ? parent.container : document.body;
+		parentHTMLElement.appendChild(this.container);
+	}
+
+	destroy() {
+		const parentHTMLContainer = this.parent ? this.parent.container : document.body;
+		parentHTMLContainer.removeChild(this.container);
+
+		super.destroy();
+	}
+
+	getDomRootElement() : HTMLElement {
+		return this.container;
+	}
+
+	addRGBWColorPicker(name: string, colorChannels: ColorChannels) : UIColorSelector {
+		const colorSelector = new UIColorSelector(name, this, colorChannels);
+
+		this.elements.push(colorSelector);
+		this.container.appendChild(colorSelector.container);
+		return colorSelector;
+	}
+
+	addGroup(name: string) : UIElementGroup {
+		const group = new UIElementGroup(name, this);
+		this.elements.push(group);
+		this.container.appendChild(group.container);
+		return group;
+	}
+
+	addToGroupHeader(htmlElement: HTMLElement) {
+		this.headerDiv.appendChild(htmlElement);
+	}
+
+	getDivContainer() : HTMLDivElement {
+		return this.container;
+	}
+
+	getChildByName(name: string) : AUIControlElement | null {
+		for (let i = 0; i < this.elements.length; ++i) {
+			if (this.elements[i].getName() == name) {
+				return this.elements[i];
+			}
+		}
+
+		return null;
+	}
+
+	eraseChildByRef(ref: AUIControlElement) : boolean {
+		for (let i = 0; i < this.elements.length; ++i) {
+			if (this.elements[i] === ref) {
+				this.elements.splice(i, 1);
+				this.container.removeChild(ref.getDomRootElement());
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	removeChildByName(name: string) : boolean {
+		for (let i = 0; i < this.elements.length; ++i) {
+			if (this.elements[i].getName() == name) {
+				this.elements[i].destroy();
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
 
-function CreateBRElement() {
-    return document.createElement('br');
+class UIColorSelector extends AUIControlElement {
+	container: HTMLDivElement;
+	colorPicker: HTMLInputElement;
+	sliderR: SliderElement;
+	sliderG: SliderElement;
+	sliderB: SliderElement;
+	sliderW: SliderElement;
+
+	constructor(name: string, parent: UIElementGroup, colorChannels: ColorChannels) {
+		super(UIControlElementType.ColorSelector, name, parent)
+
+		this.container = HTML_CreateDivElement('control-panel');
+
+		this.colorPicker = HTML_CreateColorPickerElement();
+
+		this.colorPicker.oninput = (_: Event) => {
+			const htmlColor = this.colorPicker.value;
+			const rgb = ExtractRGB(htmlColor);
+
+			this.onColorChange(new RGBWColor(rgb.r, rgb.g, rgb.b, 0));
+		}
+
+		this.colorPicker.dataset.name = name;
+
+		const colorPickerText = HTML_CreateSpanElement(' ' + name);
+
+		this.container.appendChild(this.colorPicker);
+		this.container.appendChild(colorPickerText);
+		this.container.appendChild(HTML_CreateBrElement());
+
+		const pElement = document.createElement('p');
+
+		const obj = this;
+
+		const onColorChangeFunction = function() {
+			const newColor = obj._getSliderColorValue();
+			obj.onColorChange(newColor);
+		}
+
+		this.sliderR = CreateRangeSlider(name + 'R', 'Red', onColorChangeFunction, 'red');
+		this.sliderG = CreateRangeSlider(name + 'G', 'Green', onColorChangeFunction, 'green');
+		this.sliderB = CreateRangeSlider(name + 'B', 'Blue', onColorChangeFunction, 'blue');
+		this.sliderW = CreateRangeSlider(name + 'W', 'White', onColorChangeFunction, 'white');
+
+		pElement.appendChild(this.sliderR.container);
+		pElement.appendChild(this.sliderG.container);
+		pElement.appendChild(this.sliderB.container);
+		pElement.appendChild(this.sliderW.container);
+
+		if (!colorChannels.r) {
+			this.sliderR.container.classList.add('hidden');
+		}
+
+		if (!colorChannels.g) {
+			this.sliderG.container.classList.add('hidden');
+		}
+
+		if (!colorChannels.b) {
+			this.sliderB.container.classList.add('hidden');
+		}
+
+		if (!colorChannels.w) {
+			this.sliderW.container.classList.add('hidden');
+		}
+
+		this.container.appendChild(pElement);
+	}
+
+	getDomRootElement() : HTMLElement {
+		return this.container;
+	}
+
+	_getSliderColorValue() : RGBWColor {
+		const sliderR = this.sliderR.slider;
+		const sliderG = this.sliderG.slider;
+		const sliderB = this.sliderB.slider;
+		const sliderW = this.sliderW.slider;
+
+		return new RGBWColor(parseInt(sliderR.value), parseInt(sliderG.value), parseInt(sliderB.value), parseInt(sliderW.value));
+	}
+
+	setValue(newColor: RGBWColor) {
+		// Set color picker
+		this.colorPicker.value = newColor.toHexColor()
+
+		this.sliderR.slider.value = '' + newColor.r;
+		this.sliderG.slider.value = '' + newColor.g;
+		this.sliderB.slider.value = '' + newColor.b;
+		this.sliderW.slider.value = '' + newColor.w
+	}
+
+	getValue() : RGBWColor {
+		return this._getSliderColorValue();
+	}
+
+	onColorChange(newColor: RGBWColor) {
+		// Update all elements
+		this.setValue(newColor);
+
+		// Forward event
+		this.onInputValueChange(this);
+	}
 }
 
 class SliderElement {
-    slider: HTMLInputElement;
-    container: HTMLDivElement;
+	slider: HTMLInputElement;
+	container: HTMLDivElement;
 
-    constructor(slider: HTMLInputElement, container: HTMLDivElement) {
-        this.slider = slider;
-        this.container = container;
-    }
+	constructor(slider: HTMLInputElement, container: HTMLDivElement) {
+		this.slider = slider;
+		this.container = container;
+	}
 }
 
-function CreateRangeSlider(id: string, title: string, uuid: string, onColorChangeFunction: (uuid: string, newColor: RGBWColor) => any, containerClass: string | null = null) : SliderElement {
-    const element = document.createElement('input');
-    element.type = 'range';
-    element.min = '0';
-    element.max = '255';
-    element.value = '0';
-    element.classList.add('slider');
-    element.id = id;
-    element.oninput = () => {
+function CreateRangeSlider(id: string, title: string, onColorChangeFunction: () => any, containerClass: string | null = null) : SliderElement {
+	const element = document.createElement('input');
+	element.type = 'range';
+	element.min = '0';
+	element.max = '255';
+	element.value = '0';
+	element.classList.add('slider');
+	element.id = id;
+	element.oninput = () => {
+		onColorChangeFunction();
+	}
 
-        let newColor = UI_GetSliderRGBWValueForUUID(uuid);
+	const text = HTML_CreateSpanElement(title);
 
-        onColorChangeFunction(uuid, newColor);
-    }
-    element.dataset.uuid = uuid;
+	const container = HTML_CreateDivElement();// document.createElement('div');
 
-    const text = CreateTextElement(title);
+	if (containerClass) {
+		container.classList.add('slider-background');
+		container.classList.add(containerClass);
+	}
 
-    const container = document.createElement('div');
+	container.appendChild(element);
+	container.appendChild(text);
 
-    if (containerClass) {
-        container.classList.add('slider-background');
-        container.classList.add(containerClass);
-    }
-
-    container.appendChild(element);
-    container.appendChild(text);
-
-    return new SliderElement(element, container);
-}
-
-function CreateColorSelector(id: string, name: string, uuid: string, onColorChangeFunction: (uuid: string, newColor: RGBWColor) => any, colorChannels: ColorChannels) {
-    const div = document.createElement('div');
-    div.id = id;
-    div.classList.add('control-panel');
-
-    const colorPicker = document.createElement('input');
-    colorPicker.id = uuid + 'ColorPicker';
-    colorPicker.type = 'color';
-    colorPicker.oninput = (_: Event) => {
-        const htmlColor = colorPicker.value;
-        const rgb = ExtractRGB(htmlColor);
-
-        onColorChangeFunction(uuid, new RGBWColor(rgb.r, rgb.g, rgb.b, 0));
-    }
-    colorPicker.dataset.uuid = uuid;
-
-    const colorPickerText = CreateTextElement(' ' + name);
-
-    div.appendChild(colorPicker);
-    div.appendChild(colorPickerText);
-    div.appendChild(CreateBRElement());
-
-    const pElement = document.createElement('p');
-
-    const sliderR = CreateRangeSlider(id + 'R', 'Red', uuid, onColorChangeFunction, 'red');
-    const sliderG = CreateRangeSlider(id + 'G', 'Green', uuid, onColorChangeFunction, 'green');
-    const sliderB = CreateRangeSlider(id + 'B', 'Blue', uuid, onColorChangeFunction, 'blue');
-    const sliderW = CreateRangeSlider(id + 'W', 'White', uuid, onColorChangeFunction, 'white');
-
-    pElement.appendChild(sliderR.container);
-    pElement.appendChild(sliderG.container);
-    pElement.appendChild(sliderB.container);
-    pElement.appendChild(sliderW.container);
-
-    if (!colorChannels.r) {
-        sliderR.container.classList.add('hidden');
-    }
-
-    if (!colorChannels.g) {
-        sliderG.container.classList.add('hidden');
-    }
-
-    if (!colorChannels.b) {
-        sliderB.container.classList.add('hidden');
-    }
-
-    if (!colorChannels.w) {
-        sliderW.container.classList.add('hidden');
-    }
-
-    div.appendChild(pElement);
-    document.body.appendChild(div);
-}
-
-function RemoveAllControls() {
-    const elements = document.querySelectorAll('.control-panel');
-
-    for (let  i = 0; i < elements.length; i++) {
-        const parentNode = elements[i].parentNode;
-
-        if (parentNode != null) {
-            parentNode.removeChild(elements[i]);
-        }
-    }
-
-    ConnectedCharacteristics.clear();
-}
-
-function UI_GetSliderById(id: string) : HTMLInputElement {
-    const elem = <HTMLInputElement> document.getElementById(id);
-
-    if (!elem) {
-        throw "HTML Slider element by id '" + id + "' not found!";
-    }
-
-    return elem;
-}
-
-function UI_GetSliderRGBWValueForUUID(uuid: string): RGBWColor {
-    const rSlider = UI_GetSliderById(uuid + "R");
-    const gSlider = UI_GetSliderById(uuid + "G");
-    const bSlider = UI_GetSliderById(uuid + "B");
-    const wSlider = UI_GetSliderById(uuid + "W");
-
-    return new RGBWColor(parseInt(rSlider.value), parseInt(gSlider.value), parseInt(bSlider.value), parseInt(wSlider.value));
-}
-
-function UI_SetSliderRGBWValueForUUID(uuid: string, newColor: RGBWColor) {
-    const rSlider = UI_GetSliderById(uuid + "R");
-    const gSlider = UI_GetSliderById(uuid + "G");
-    const bSlider = UI_GetSliderById(uuid + "B");
-    const wSlider = UI_GetSliderById(uuid + "W");
-
-    rSlider.value = "" + newColor.r;
-    gSlider.value = "" + newColor.g;
-    bSlider.value = "" + newColor.b;
-    wSlider.value = "" + newColor.w;
-}
-
-function RemoveColorSelectorWhenExists(id: string) {
-    const element = document.getElementById(id);
-
-    if (element && element.parentNode) {
-        element.parentNode.removeChild(element);
-    }
+	return new SliderElement(element, container);
 }

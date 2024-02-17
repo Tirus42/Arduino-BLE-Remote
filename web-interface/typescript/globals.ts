@@ -1,6 +1,6 @@
-let ConnectedDevice: BluetoothDevice | null = null;
-const ConnectedCharacteristics = new Map();
 const PendingCharacteristicPromises = new Map();
+
+const ConnectedDevices : Set<BluetoothDevice> = new Set();
 
 const SERVICE_UUID = "a6a2fc07-815c-4262-97a9-1cef5181a1e4";
 const LED_CHARACTERISTICS = new Map<string, string>([

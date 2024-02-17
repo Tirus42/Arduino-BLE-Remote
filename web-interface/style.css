@@ -1,5 +1,73 @@
+body {
+    #margin: 0;
+    #padding: 0 0 15px 0;
+    font-size: 1em;
+    global-background-color: white;
+    background: var(global-background-color);
+}
+
+div.bevel {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    margin:  20px 3px 3px 3px;
+    position: relative;
+}
+
+div.bevel > div.span {
+    margin-top: -10px;
+    margin-left: 10px;
+}
+
+div.bevel > div.span > span {
+    font-size: 1.1em;
+    padding: 0 3px 0 3px;
+    background-color: white;
+}
+div.sliderexpandable > div.span {
+    height:0;
+}
+
+div.bevel > div > div.check,
+div.bevel > div > div.range,
+div.bevel > div > div.select,
+div.bevel > div > input,
+div.bevel > div.check,
+div.bevel > div.range,
+div.bevel > div.select,
+div.bevel > input,
+div.bevel > section > label.toggle {
+    margin-left: 10px;
+    margin-bottom: 10px;
+}
+
+div.radio {
+    min-height: 3em;
+}
+
+div.radio > div > label {
+    padding-right: 10px;
+}
+
+label,
+input[type=button],
+.toggle {
+    cursor: pointer;
+}
+
+div.sliderexpandable > section {
+    margin-top: 20px;
+    position: relative;
+}
+
+div.expander {
+    overflow: hidden;
+    visibility: hidden;
+    height: 0;
+    margin-top: 0px;
+}
+
 input.slider {
-    width: calc(100vw - 5rem);
+    width: calc(100% - 5rem);
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
 }
@@ -40,7 +108,10 @@ input.slider {
     }
 
     .slider-background.white {
-        background-color: #ffffffbb;
-        color: black;
+        background-color: #ffffff4b;
+    }
+
+    div.bevel > div.span > span {
+        background-color: #111;
     }
 }
