@@ -70,8 +70,14 @@ function HTML_CreateOptionElement(value: string) : HTMLOptionElement {
 	return elem;
 }
 
-function HTML_CreateLabelElement() : HTMLLabelElement {
-	return document.createElement('label');
+function HTML_CreateLabelElement(optValue: string | null) : HTMLLabelElement {
+	const elem = document.createElement('label');
+
+	if (optValue) {
+		elem.innerHTML = optValue;
+	}
+
+	return elem;
 }
 
 function HTML_CreateBrElement() : HTMLBRElement {

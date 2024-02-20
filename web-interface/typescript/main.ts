@@ -354,6 +354,8 @@ function Init() {
 
 		const nestedGroup = rootGroup.addGroup('Sub Group');
 		nestedGroup.addRGBWColorPicker('Sub color picker with only the white channel', new ColorChannels(false, false, false, true));
+		nestedGroup.addRadioGroup('Radio select test', ['Entry 1', 'Entry 2', 'Entry 3'], 1);
+		nestedGroup.addDropDown('Drop down test', ['Entry 1', 'Entry 2', 'Entry 3'], 1);
 	}
 }
 

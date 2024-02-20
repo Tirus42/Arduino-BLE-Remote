@@ -1,6 +1,8 @@
 enum UIControlElementType {
 	Group,
 	ColorSelector,
+	RadioSelector,
+	DropDownSelector,
 }
 
 abstract class AUIControlElement {
@@ -87,6 +89,22 @@ class UIElementGroup extends AUIControlElement {
 		return colorSelector;
 	}
 
+	addRadioGroup(name: string, entries: string[], selectedIndex = 0) : UIRadioElement {
+		const element = new UIRadioElement(name, this, entries, selectedIndex);
+
+		this.elements.push(element);
+		this.container.appendChild(element.getDomRootElement());
+		return element;
+	}
+
+	addDropDown(name: string, entries: string[], selectedIndex = 0) : UIDropDownElement {
+		const element = new UIDropDownElement(name, this, entries, selectedIndex);
+
+		this.elements.push(element);
+		this.container.appendChild(element.getDomRootElement());
+		return element;
+	}
+
 	addGroup(name: string) : UIElementGroup {
 		const group = new UIElementGroup(name, this);
 		this.elements.push(group);
@@ -145,7 +163,7 @@ class UIColorSelector extends AUIControlElement {
 	sliderW: SliderElement;
 
 	constructor(name: string, parent: UIElementGroup, colorChannels: ColorChannels) {
-		super(UIControlElementType.ColorSelector, name, parent)
+		super(UIControlElementType.ColorSelector, name, parent);
 
 		this.container = HTML_CreateDivElement('control-panel');
 
@@ -275,4 +293,84 @@ function CreateRangeSlider(id: string, title: string, onColorChangeFunction: () 
 	container.appendChild(text);
 
 	return new SliderElement(element, container);
+}
+
+abstract class AUISelectorElement extends AUIControlElement {}
+
+class UIRadioElement extends AUISelectorElement {
+	container: HTMLDivElement;
+	spanDiv: HTMLDivElement;
+	span: HTMLSpanElement;
+	innerDiv: HTMLDivElement;
+	options: HTMLInputElement[];
+
+	constructor(name: string, parent: UIElementGroup | null, entries: string[], selectedIndex = 0) {
+		super(UIControlElementType.RadioSelector, name, parent);
+
+		this.container = HTML_CreateDivElement(['bevel', 'radio'])
+		this.spanDiv = HTML_CreateDivElement('span');
+		this.span = HTML_CreateSpanElement(name);
+		this.innerDiv = HTML_CreateDivElement();
+		this.options = [];
+
+		const select = HTML_CreateSelectElement();
+
+		for (let i = 0; i < entries.length; ++i) {
+			const entry = entries[i];
+			const label = HTML_CreateLabelElement('&nbsp;' + entry);
+			const option = HTML_CreateRadioElement(name, entry);
+
+			if (i == selectedIndex) {
+				option.checked = true;
+			}
+
+			label.appendChild(option);
+			this.innerDiv.appendChild(label);
+
+			this.options.push(option);
+		};
+
+		this.spanDiv.appendChild(this.span);
+
+		this.container.appendChild(this.spanDiv);
+		this.container.appendChild(this.innerDiv);
+	}
+
+	getDomRootElement() : HTMLElement {
+		return this.container;
+	}
+}
+
+class UIDropDownElement extends AUISelectorElement {
+	container: HTMLDivElement;
+	nameDiv: HTMLDivElement;
+	dropDown: HTMLSelectElement;
+
+	constructor(name: string, parent: UIElementGroup | null, entries: string[], selectedIndex = 0) {
+		super(UIControlElementType.DropDownSelector, name, parent);
+
+		this.container = HTML_CreateDivElement('select');
+		this.nameDiv = HTML_CreateDivElement();
+		this.dropDown = HTML_CreateSelectElement();
+
+		this.nameDiv.innerText = name;
+
+		for (let i = 0; i < entries.length; ++i) {
+			const option = HTML_CreateOptionElement(entries[i]);
+			option.innerText = entries[i];
+
+			if (i == selectedIndex) {
+				option.selected = true;
+			}
+
+			this.dropDown.appendChild(option);
+		};
+
+		this.container.appendChild(this.nameDiv);
+		this.container.appendChild(this.dropDown);
+	}
+
+	getDomRootElement() : HTMLElement {
+		return this.container;
+	}
 }
