@@ -293,7 +293,32 @@ function CreateRangeSlider(id: string, title: string, onColorChangeFunction: () 
 	return new SliderElement(element, container);
 }
 
-abstract class AUISelectorElement extends AUIControlElement {}
+abstract class AUISelectorElement extends AUIControlElement {
+	optionNames: string[];
+	selectedIndex: number;
+
+	constructor(type: UIControlElementType, name: string, parent: UIElementGroup | null, optionNames: string[]) {
+		super(type, name, parent);
+		this.optionNames = optionNames;
+		this.selectedIndex = 0;
+	}
+
+	setSelectedIndex(newSelectedIndex: number) {
+		if (newSelectedIndex >= this.optionNames.length || newSelectedIndex < 0) {
+			throw "Invalid index, out of bounds";
+		}
+
+		this.selectedIndex = newSelectedIndex;
+	}
+
+	getSelectedIndex() : number {
+		return this.selectedIndex;
+	}
+
+	getSelectedOption() : string {
+		return this.optionNames[this.selectedIndex];
+	}
+}
 
 class UIRadioElement extends AUISelectorElement {
 	container: HTMLDivElement;
@@ -302,8 +327,8 @@ class UIRadioElement extends AUISelectorElement {
 	innerDiv: HTMLDivElement;
 	options: HTMLInputElement[];
 
-	constructor(name: string, parent: UIElementGroup | null, entries: string[], selectedIndex = 0) {
-		super(UIControlElementType.RadioSelector, name, parent);
+	constructor(name: string, parent: UIElementGroup | null, optionNames: string[], selectedIndex = 0) {
+		super(UIControlElementType.RadioSelector, name, parent, optionNames);
 
 		this.container = HTML_CreateDivElement(['bevel', 'radio'])
 		this.spanDiv = HTML_CreateDivElement('span');
@@ -313,10 +338,14 @@ class UIRadioElement extends AUISelectorElement {
 
 		const select = HTML_CreateSelectElement();
 
-		for (let i = 0; i < entries.length; ++i) {
-			const entry = entries[i];
+		for (let i = 0; i < optionNames.length; ++i) {
+			const entry = optionNames[i];
 			const label = HTML_CreateLabelElement('&nbsp;' + entry);
 			const option = HTML_CreateRadioElement(name, entry);
+
+			option.oninput = () => {
+				this.onInputValueChange();
+			}
 
 			if (i == selectedIndex) {
 				option.checked = true;
@@ -329,7 +358,6 @@ class UIRadioElement extends AUISelectorElement {
 		};
 
 		this.spanDiv.appendChild(this.span);
-
 		this.container.appendChild(this.spanDiv);
 		this.container.appendChild(this.innerDiv);
 	}
@@ -337,31 +365,54 @@ class UIRadioElement extends AUISelectorElement {
 	getDomRootElement() : HTMLElement {
 		return this.container;
 	}
+
+	setSelectedIndex(newSelectedIndex: number) {
+		super.setSelectedIndex(newSelectedIndex);
+
+		this.options[newSelectedIndex].checked = true;
+	}
+
+	onInputValueChange() {
+		for (let i = 0; i < this.options.length; ++i) {
+			if (this.options[i].checked) {
+				this.setSelectedIndex(i);
+				break;
+			}
+		}
+
+		super.onInputValueChange(this);
+	}
 }
 
 class UIDropDownElement extends AUISelectorElement {
 	container: HTMLDivElement;
 	nameDiv: HTMLDivElement;
 	dropDown: HTMLSelectElement;
+	options: HTMLOptionElement[];
 
-	constructor(name: string, parent: UIElementGroup | null, entries: string[], selectedIndex = 0) {
-		super(UIControlElementType.DropDownSelector, name, parent);
+	constructor(name: string, parent: UIElementGroup | null, optionNames: string[], selectedIndex = 0) {
+		super(UIControlElementType.DropDownSelector, name, parent, optionNames);
 
 		this.container = HTML_CreateDivElement('select');
 		this.nameDiv = HTML_CreateDivElement();
 		this.dropDown = HTML_CreateSelectElement();
+		this.options = [];
 
 		this.nameDiv.innerText = name;
+		this.dropDown.oninput = () => {
+			this.onInputValueChange();
+		}
 
-		for (let i = 0; i < entries.length; ++i) {
-			const option = HTML_CreateOptionElement(entries[i]);
-			option.innerText = entries[i];
+		for (let i = 0; i < optionNames.length; ++i) {
+			const option = HTML_CreateOptionElement(optionNames[i]);
+			option.innerText = optionNames[i];
 
 			if (i == selectedIndex) {
 				option.selected = true;
 			}
 
 			this.dropDown.appendChild(option);
+			this.options.push(option);
 		};
 
 		this.container.appendChild(this.nameDiv);
@@ -370,5 +421,22 @@ class UIDropDownElement extends AUISelectorElement {
 
 	getDomRootElement() : HTMLElement {
 		return this.container;
+	}
+
+	setSelectedIndex(newSelectedIndex: number) {
+		super.setSelectedIndex(newSelectedIndex);
+
+		this.options[newSelectedIndex].selected = true;
+	}
+
+	onInputValueChange() {
+		for (let i = 0; i < this.options.length; ++i) {
+			if (this.options[i].selected) {
+				this.setSelectedIndex(i);
+				break;
+			}
+		}
+
+		super.onInputValueChange(this);
 	}
 }
