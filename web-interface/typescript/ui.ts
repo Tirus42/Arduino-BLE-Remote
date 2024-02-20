@@ -83,33 +83,31 @@ class UIElementGroup extends AUIControlElement {
 
 	addRGBWColorPicker(name: string, colorChannels: ColorChannels) : UIColorSelector {
 		const colorSelector = new UIColorSelector(name, this, colorChannels);
-
-		this.elements.push(colorSelector);
-		this.container.appendChild(colorSelector.container);
+		this._addChildElement(colorSelector);
 		return colorSelector;
 	}
 
 	addRadioGroup(name: string, entries: string[], selectedIndex = 0) : UIRadioElement {
 		const element = new UIRadioElement(name, this, entries, selectedIndex);
-
-		this.elements.push(element);
-		this.container.appendChild(element.getDomRootElement());
+		this._addChildElement(element);
 		return element;
 	}
 
 	addDropDown(name: string, entries: string[], selectedIndex = 0) : UIDropDownElement {
 		const element = new UIDropDownElement(name, this, entries, selectedIndex);
-
-		this.elements.push(element);
-		this.container.appendChild(element.getDomRootElement());
+		this._addChildElement(element);
 		return element;
 	}
 
 	addGroup(name: string) : UIElementGroup {
 		const group = new UIElementGroup(name, this);
-		this.elements.push(group);
-		this.container.appendChild(group.container);
+		this._addChildElement(group);
 		return group;
+	}
+
+	private _addChildElement(newElement: AUIControlElement) {
+		this.elements.push(newElement);
+		this.container.appendChild(newElement.getDomRootElement());
 	}
 
 	addToGroupHeader(htmlElement: HTMLElement) {
