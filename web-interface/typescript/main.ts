@@ -8,7 +8,7 @@ interface ControlMapping {
 	 type: ControlMappingType
 }
 
-class DeviceConnection extends UIElementGroup {
+class DeviceConnection extends UIGroupElement {
 	device: BluetoothDevice;
 	modelName: string | null;
 	buttonDisconnect: HTMLButtonElement;
@@ -120,7 +120,7 @@ class DeviceConnection extends UIElementGroup {
 		return this.removeChildByName(name);
 	}
 
-	onInputValueChange(sourceElement: AUIControlElement) {
+	onInputValueChange(sourceElement: AUIElement) {
 		const sourceAbsoluteName = sourceElement.getAbsoluteName();
 
 		if (this._handleClassicCharacteristicMapping(sourceAbsoluteName, sourceElement))
@@ -129,13 +129,13 @@ class DeviceConnection extends UIElementGroup {
 		Log("Unhandled input event from element: " + sourceAbsoluteName);
 	}
 
-	private _handleClassicCharacteristicMapping(absoluteName: string[], sourceElement: AUIControlElement) : boolean {
+	private _handleClassicCharacteristicMapping(absoluteName: string[], sourceElement: AUIElement) : boolean {
 		const entry = this.classicCharacteristicMapping.get(absoluteName.toString());
 
 		if (!entry)
 			return false;
 
-		if (sourceElement.type != UIControlElementType.ColorSelector)
+		if (sourceElement.type != UIElementType.ColorSelector)
 			throw 'Input event from classic characteristic mapping, but source is not a color selector!';
 
 		const colorSelector = <UIColorSelector> sourceElement;
@@ -348,7 +348,7 @@ function Init() {
 	if (showTestElements == 'true') {
 		Log("==> Adding test GUI elements <==");
 
-		const rootGroup = new UIElementGroup('Test group', null);
+		const rootGroup = new UIGroupElement('Test group', null);
 		rootGroup.addToGroupHeader(HTML_CreateButtonElement('Test button without a function'));
 		rootGroup.addRGBWColorPicker('Test color selection', new ColorChannels());
 
