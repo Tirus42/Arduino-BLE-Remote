@@ -34,7 +34,14 @@ class BLELedController {
 		static RGBW ExtractRGBW(const NimBLECharacteristic& characteristic);
 
 	public:
-		BLELedController(const char* deviceName, const char* modelName = nullptr);
+		/**
+		* Constructor.
+		* Initializes the BLE server and starts advertising using the given deviceName.
+		* Also sets the modelName of the internal characteristic (optional).
+		* Defaults to a client limit of 1 client, then stops advertising.
+		* The client limit can be increased, but more then 3 did not seem to work with the used library.
+		*/
+		BLELedController(const char* deviceName, const char* modelName = nullptr, uint8_t clientLimit = 1);
 		~BLELedController();
 
 		void begin();

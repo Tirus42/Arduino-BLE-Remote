@@ -61,10 +61,12 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 	BLEService* pService;
 	BLECharacteristic* modelNameCharacteristic;
 	BLECharacteristic* ledInfoCharacteristic;
+	uint8_t clientLimit;
 
-	InternalData() :
+	InternalData(uint8_t clientLimit) :
 		pServer(BLEDevice::createServer()),
-		pService(pServer->createService(SERVICE_UUID)) {
+		pService(pServer->createService(SERVICE_UUID)),
+		clientLimit(clientLimit) {
 
 		modelNameCharacteristic = pService->createCharacteristic(MODEL_NAME_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ);
 		ledInfoCharacteristic = pService->createCharacteristic(LED_INFO_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
@@ -88,23 +90,35 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 	}
 
 	virtual void onConnect(BLEServer* _server, ble_gap_conn_desc* param) override {
+		clientLimit--;
+
 		instance->OnConnect(BleMacToString(param->peer_ota_addr).c_str());
+
+		if (clientLimit > 0) {
+			pServer->getAdvertising()->start();
+		}
 	}
 
 	virtual void onDisconnect(BLEServer* _server, ble_gap_conn_desc* param) override {
+		clientLimit++;
+
 		instance->OnDisconnect(BleMacToString(param->peer_ota_addr).c_str());
 	}
 };
 
-BLELedController::BLELedController(const char* deviceName, const char* modelName) :
+BLELedController::BLELedController(const char* deviceName, const char* modelName, uint8_t clientLimit) :
 	onConnectCallback(),
 	onDisconnectCallback(),
 	uuidToCharacteristicMap(),
 	internal() {
 
+	if (clientLimit == 0) {
+		clientLimit = 1;
+	}
+
 	BLEDevice::init(deviceName);
 
-	internal.reset(new InternalData());
+	internal.reset(new InternalData(clientLimit));
 
 	// Set global instance
 	instance = this;
