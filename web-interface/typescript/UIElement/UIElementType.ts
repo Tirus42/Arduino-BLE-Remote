@@ -3,4 +3,6 @@ enum UIElementType {
 	ColorSelector,
 	RadioSelector,
 	DropDownSelector,
+	CheckBoxSelector,
+	RangeSelector,
 }

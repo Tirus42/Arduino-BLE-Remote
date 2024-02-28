@@ -74,6 +74,8 @@
     "UIElement/AUISelectorElement.ts",
     "UIElement/UIDropDownElement.ts",
     "UIElement/UIRadioElement.ts",
+    "UIElement/UICheckBoxElement.ts",
+    "UIElement/UIRangeElement.ts",
 
     // app code
     "ui.ts",

@@ -24,12 +24,12 @@ function HTML_CreateSpanElement(optInnerText: string | null = null) : HTMLSpanEl
 	return elem;
 }
 
-function HTML_CreateRangeElement(min: string, max: string, value: string) : HTMLInputElement {
+function HTML_CreateRangeElement(min: number, max: number, value: number) : HTMLInputElement {
 	const elem = document.createElement('input');
 	elem.type = 'range';
-	elem.min = min;
-	elem.max = max;
-	elem.value = value;
+	elem.min = '' + min;
+	elem.max = '' + max;
+	elem.value = '' + value;
 	return elem;
 }
 
@@ -39,10 +39,10 @@ function HTML_CreateColorPickerElement() : HTMLInputElement {
 	return elem;
 }
 
-function HTML_CreateCheckboxElement(value: string) : HTMLInputElement {
+function HTML_CreateCheckboxElement(value: boolean) : HTMLInputElement {
 	const elem = document.createElement('input');
 	elem.type = 'checkbox';
-	elem.value = value;
+	elem.checked = value;
 	return elem;
 }
 

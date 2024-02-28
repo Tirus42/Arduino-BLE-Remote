@@ -48,6 +48,18 @@ class UIGroupElement extends AUIElement {
 		return element;
 	}
 
+	addCheckBox(name: string, value: boolean) : UICheckBoxElement {
+		const element = new UICheckBoxElement(name, this, value);
+		this._addChildElement(element);
+		return element;
+	}
+
+	addRange(name: string, min: number, max: number, value: number) : UIRangeElement{
+		const element = new UIRangeElement(name, this, min, max, value);
+		this._addChildElement(element);
+		return element;
+	}
+
 	addGroup(name: string) : UIGroupElement {
 		const group = new UIGroupElement(name, this);
 		this._addChildElement(group);
