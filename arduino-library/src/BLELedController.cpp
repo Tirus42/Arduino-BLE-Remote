@@ -66,10 +66,9 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 	InternalData(uint8_t clientLimit) :
 		pServer(BLEDevice::createServer()),
 		pService(pServer->createService(SERVICE_UUID)),
+		modelNameCharacteristic(pService->createCharacteristic(MODEL_NAME_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ)),
+		ledInfoCharacteristic(nullptr),
 		clientLimit(clientLimit) {
-
-		modelNameCharacteristic = pService->createCharacteristic(MODEL_NAME_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ);
-		ledInfoCharacteristic = pService->createCharacteristic(LED_INFO_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
 
 		pServer->setCallbacks(this);
 	}
@@ -87,6 +86,13 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 
 	void removeCharacteristic(BLECharacteristic* characteristic) {
 		pService->removeCharacteristic(characteristic, false);
+	}
+
+	void addLedInfoCharacteristicOnDemand() {
+		if (!ledInfoCharacteristic) {
+			ledInfoCharacteristic = pService->createCharacteristic(LED_INFO_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
+			ledInfoCharacteristic->setCallbacks(&callbackHandler);
+		}
 	}
 
 	virtual void onConnect(BLEServer* _server, ble_gap_conn_desc* param) override {
@@ -144,8 +150,6 @@ void BLELedController::begin() {
 		iter.second.characteristic->setCallbacks(&callbackHandler);
 	}
 
-	internal->ledInfoCharacteristic->setCallbacks(&callbackHandler);
-
 	internal->pService->start();
 
 	// Start advertising
@@ -167,6 +171,9 @@ void BLELedController::addRGBWCharacteristic(const std::string& name, std::funct
 		uuid = iter->second;
 	} else {
 		uuid = GenerateUUIDByName(name);
+
+		// Custom UUID generated, add info characteristic to allow the client to read the mapping
+		internal->addLedInfoCharacteristicOnDemand();
 	}
 
 	Serial.printf("Create RGBW mapping with name '%s' on UUID '%s'\n", name.c_str(), uuid.toString().c_str());
@@ -215,7 +222,7 @@ void BLELedController::onCharacteristicWritten(BLECharacteristic* characteristic
 
 		iter->second.callback(newColor);
 
-	} else if (characteristic->getUUID().equals(internal->ledInfoCharacteristic->getUUID())) {
+	} else if (internal->ledInfoCharacteristic && characteristic->getUUID().equals(internal->ledInfoCharacteristic->getUUID())) {
 		handleLedInfoRequest(*characteristic);
 	} else {
 		Serial.printf("Unhandled characteristic with UUID: '%s'\n", characteristic->getUUID().toString().c_str());
@@ -255,7 +262,7 @@ void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) {
 		char* charPtr = reinterpret_cast<char*>(buffer + 1);
 		size_t length = 1 + snprintf(charPtr, sizeof(buffer) - 1, "%s:%s:%s", i.first.toString().c_str(), i.second.name.c_str(), channelString.c_str());
 
-		internal->ledInfoCharacteristic->notify(buffer, length);
+		characteristic.notify(buffer, length);
 	}
 }
 
