@@ -120,28 +120,28 @@ class DeviceConnection extends UIGroupElement {
 		return this.removeChildByName(name);
 	}
 
-	onInputValueChange(sourceElement: AUIElement) {
+	onInputValueChange(sourceElement: AUIElement, newValue: ValueWrapper) {
 		const sourceAbsoluteName = sourceElement.getAbsoluteName();
 
-		if (this._handleClassicCharacteristicMapping(sourceAbsoluteName, sourceElement))
+		if (this._handleClassicCharacteristicMapping(sourceAbsoluteName, sourceElement, newValue))
 			return;
 
 		Log("Unhandled input event from element: " + sourceAbsoluteName);
 	}
 
-	private _handleClassicCharacteristicMapping(absoluteName: string[], sourceElement: AUIElement) : boolean {
+	private _handleClassicCharacteristicMapping(absoluteName: string[], sourceElement: AUIElement, newValue: ValueWrapper) : boolean {
 		const entry = this.classicCharacteristicMapping.get(absoluteName.toString());
 
 		if (!entry)
 			return false;
 
-		if (sourceElement.type != UIElementType.ColorSelector)
+		if (sourceElement.type !== UIElementType.ColorSelector)
 			throw 'Input event from classic characteristic mapping, but source is not a color selector!';
 
-		const colorSelector = <UIColorSelector> sourceElement;
-		const newValue: RGBWColor = colorSelector.getValue();
+		if (newValue.type !== ValueType.RGBWColor)
+			throw 'Input value is not a color value!';
 
-		SetColor(entry, newValue);
+		SetColor(entry, newValue.getRGBWValue());
 
 		return true;
 	}

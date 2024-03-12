@@ -33,9 +33,9 @@ abstract class AUIElement {
 		return ret;
 	}
 
-	onInputValueChange(sourceElement: AUIElement) {
+	onInputValueChange(sourceElement: AUIElement, newValue: ValueWrapper) {
 		if (this.parent) {
-			this.parent.onInputValueChange(sourceElement)
+			this.parent.onInputValueChange(sourceElement, newValue)
 		} else {
 			Log("Unhanded change event on " + sourceElement.getAbsoluteName());
 		}

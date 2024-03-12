@@ -98,6 +98,6 @@ class UIColorSelector extends AUIElement {
 		this.setValue(newColor);
 
 		// Forward event
-		this.onInputValueChange(this);
+		this.onInputValueChange(this, new ValueWrapper(newColor));
 	}
 }

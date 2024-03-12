@@ -68,6 +68,8 @@
 
     // UI code
     "UIElement/UIElementType.ts",
+    "UIElement/ValueWrapper.ts",
+
     "UIElement/AUIElement.ts",
     "UIElement/UIGroupElement.ts",
     "UIElement/UIColorSelector.ts",

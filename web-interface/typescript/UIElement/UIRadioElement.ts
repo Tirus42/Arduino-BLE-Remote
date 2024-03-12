@@ -58,6 +58,6 @@ class UIRadioElement extends AUISelectorElement {
 			}
 		}
 
-		super.onInputValueChange(this);
+		super.onInputValueChange(this, new ValueWrapper(this.getSelectedIndex()));
 	}
 }

@@ -29,6 +29,6 @@ class UICheckBoxElement extends AUIElement {
 	onInputValueChange() {
 		const newState: boolean = this.checkbox.checked;
 
-		super.onInputValueChange(this);
+		super.onInputValueChange(this, new ValueWrapper(newState));
 	}
 }

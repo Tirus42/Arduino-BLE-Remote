@@ -41,6 +41,6 @@ class UIRangeElement extends AUIElement {
 	}
 
 	onInputValueChange() {
-		super.onInputValueChange(this);
+		super.onInputValueChange(this, new ValueWrapper(this.getValue()));
 	}
 }
