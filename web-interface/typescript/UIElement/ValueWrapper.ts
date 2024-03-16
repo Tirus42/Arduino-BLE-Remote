@@ -51,11 +51,11 @@ class ValueWrapper {
 			return ValueType.Number;
 		}
 
-		if (value instanceof String) {
+		if (typeof value === 'string') {
 			return ValueType.String;
 		}
 
-		if (value instanceof Boolean) {
+		if (typeof value === 'boolean') {
 			return ValueType.Boolean;
 		}
 
