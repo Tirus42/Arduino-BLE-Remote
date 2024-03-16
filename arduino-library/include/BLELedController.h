@@ -10,6 +10,10 @@
 
 class NimBLECharacteristic;
 
+namespace webgui {
+	class RootElement;
+}
+
 class BLELedController {
 	private:
 		struct LedMappingData;
@@ -25,7 +29,17 @@ class BLELedController {
 		void onCharacteristicWritten(NimBLECharacteristic* pCharacteristic);
 
 		void handleLedInfoRequest(NimBLECharacteristic& characteristic);
-		void writeLedInfoDataV1(NimBLECharacteristic& characteristic);
+		void writeLedInfoDataV1(NimBLECharacteristic& characteristic) const;
+
+		void writeGUIInfoDataV1(NimBLECharacteristic& characteristic, uint32_t requestId) const;
+		void handleGUIRequest(NimBLECharacteristic& characteristic);
+		void handleGUISetValueRequest(const std::vector<uint8_t>& content);
+
+		/**
+		 * Writes a block of data to the characteristic. When the data is longer then the transmission size, it will be split
+		 * into several parts. The receiver can handle this by the prefixed length information.
+		 */
+		void writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, uint32_t length) const;
 
 		static void OnCharacteristicWritten(NimBLECharacteristic* pCharacteristic);
 		static void OnConnect(const char* remoteAddr);
@@ -54,6 +68,8 @@ class BLELedController {
 		void addRGBWCharacteristic(const std::string& name, std::function<void(RGBW newColor)> callback, const ColorChannels& channels = "RGBW");
 		void setOnConnectCallback(std::function<void(const char*)> onConnectCallback);
 		void setOnDisconnectCallback(std::function<void(const char*)> onDisconnectCallback);
+
+		void setGUI(std::shared_ptr<webgui::RootElement> guiData);
 
 		[[deprecated("Not required anymore, will be removed in a future version.")]]
 		void update();

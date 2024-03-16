@@ -16,6 +16,7 @@ class DeviceConnection extends UIGroupElement {
 	connectionFailedHandler: (err: Error) => void;
 	ledInfoChangeHandler: (event: Event) => void;
 	ledInfoCharacteristic: BluetoothRemoteGATTCharacteristic | undefined;
+	guiControl: GUIProtocolHandler | undefined;
 
 	classicCharacteristicMapping: Map<string, BluetoothRemoteGATTCharacteristic>;
 
@@ -126,6 +127,12 @@ class DeviceConnection extends UIGroupElement {
 		if (this._handleClassicCharacteristicMapping(sourceAbsoluteName, sourceElement, newValue))
 			return;
 
+		if (this.guiControl) {
+			const remoteName = sourceAbsoluteName.slice(1);
+			this.guiControl.setValue(remoteName, newValue);
+			return;
+		}
+
 		Log("Unhandled input event from element: " + sourceAbsoluteName);
 	}
 
@@ -162,6 +169,13 @@ class DeviceConnection extends UIGroupElement {
 			this.ledInfoCharacteristic = characteristic;
 
 			this._handleLedInfoCharacteristic(characteristic);
+		}
+		else if (characteristic.uuid == CHARACTERISTIC_GUI_UUID) {
+			const handleJsonFunction = (json: ADataJSON) => {
+				ProcessJSON(this, json);
+			}
+
+			this.guiControl = new GUIProtocolHandler(characteristic, handleJsonFunction);
 		}
 	}
 

@@ -1,8 +1,12 @@
 #include "BLELedController.h"
 
 #include <NimBLEDevice.h>
-
 #include <mbedtls/md5.h>
+
+#include "GUIDefinition.h"
+#include "GUIProtocol.h"
+
+#include <string.h>	// For memcpy()
 
 static BLELedController* instance = nullptr;
 
@@ -22,10 +26,12 @@ static const std::map<std::string, UUID> WELL_KNOWN_LED_CHARACTERISTICS = {
 	{"Time Stone", "03c7757e-be1c-42ef-9b58-c4be71fd3a7d"},
 };
 
+
 static const BLEUUID SERVICE_UUID("a6a2fc07-815c-4262-97a9-1cef5181a1e4");
 
 static const BLEUUID MODEL_NAME_CHARACTERISTIC_UUID("928ec7e1-b867-4b7d-904b-d3b8769a7299");
 static const BLEUUID LED_INFO_CHARACTERISTIC_UUID("013201e4-0873-4377-8bff-9a2389af3883");
+static const BLEUUID GUI_CHARACTERISTIC_UUID("013201e4-0873-4377-8bff-9a2389af3884");
 
 struct BLELedController::CharacteristicCallbacks : public BLECharacteristicCallbacks {
 	virtual void onWrite(BLECharacteristic* pCharacteristic/*, esp_ble_gatts_cb_param_t* param*/) override {
@@ -61,6 +67,8 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 	BLEService* pService;
 	BLECharacteristic* modelNameCharacteristic;
 	BLECharacteristic* ledInfoCharacteristic;
+	BLECharacteristic* guiCharacteristic;
+	std::shared_ptr<webgui::RootElement> guiData;
 	uint8_t clientLimit;
 
 	InternalData(uint8_t clientLimit) :
@@ -68,6 +76,7 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 		pService(pServer->createService(SERVICE_UUID)),
 		modelNameCharacteristic(pService->createCharacteristic(MODEL_NAME_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ)),
 		ledInfoCharacteristic(nullptr),
+		guiCharacteristic(nullptr),
 		clientLimit(clientLimit) {
 
 		pServer->setCallbacks(this);
@@ -92,6 +101,13 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 		if (!ledInfoCharacteristic) {
 			ledInfoCharacteristic = pService->createCharacteristic(LED_INFO_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
 			ledInfoCharacteristic->setCallbacks(&callbackHandler);
+		}
+	}
+
+	void addGUICharacteristicOnDemand() {
+		if (!guiCharacteristic) {
+			guiCharacteristic = pService->createCharacteristic(GUI_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
+			guiCharacteristic->setCallbacks(&callbackHandler);
 		}
 	}
 
@@ -182,6 +198,12 @@ void BLELedController::addRGBWCharacteristic(const std::string& name, std::funct
 	uuidToCharacteristicMap.insert({uuid, std::move(mapping)});
 }
 
+void BLELedController::setGUI(std::shared_ptr<webgui::RootElement> guiData) {
+	internal->guiData = guiData;
+
+	internal->addGUICharacteristicOnDemand();
+}
+
 void BLELedController::setOnConnectCallback(std::function<void(const char*)> onConnectCallback) {
 	this->onConnectCallback = onConnectCallback;
 }
@@ -224,9 +246,35 @@ void BLELedController::onCharacteristicWritten(BLECharacteristic* characteristic
 
 	} else if (internal->ledInfoCharacteristic && characteristic->getUUID().equals(internal->ledInfoCharacteristic->getUUID())) {
 		handleLedInfoRequest(*characteristic);
+	} else if (characteristic->getUUID().equals(internal->guiCharacteristic->getUUID())) {
+		handleGUIRequest(*characteristic);
 	} else {
 		Serial.printf("Unhandled characteristic with UUID: '%s'\n", characteristic->getUUID().toString().c_str());
 	}
+}
+
+// TODO: Move to shared lib?
+static std::vector<std::string> SplitString(const std::string& input, const std::string& delimiter) {
+	std::vector<std::string> result;
+
+	if (delimiter.empty()) {
+		for (char c : input) {
+			result.push_back(std::string() + c);
+		}
+	} else {
+		size_t lastPos = 0;
+		size_t pos = 0;
+
+		while ((pos = input.find(delimiter, lastPos)) != std::string::npos) {
+			result.push_back(input.substr(lastPos, pos - lastPos));
+
+			lastPos = pos + std::max(size_t(1), delimiter.size());
+		}
+
+		result.push_back(input.substr(lastPos, pos));
+	}
+
+	return result;
 }
 
 void BLELedController::handleLedInfoRequest(BLECharacteristic& characteristic) {
@@ -243,7 +291,86 @@ void BLELedController::handleLedInfoRequest(BLECharacteristic& characteristic) {
 	}
 }
 
-void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) {
+void BLELedController::handleGUIRequest(BLECharacteristic& characteristic) {
+	if (characteristic.getDataLength() == 0)
+		return;
+
+	NimBLEAttValue value = characteristic.getValue();
+
+	uint8_t headByte = value[0];
+	uint32_t requestId = PeekUInt32(value.begin() + 1);
+
+	if (headByte >= uint8_t(GUIClientHeader::COUNT))
+		return;
+
+	switch (GUIClientHeader(headByte)) {
+		case GUIClientHeader::RequestGUI: {
+			writeGUIInfoDataV1(characteristic, requestId);
+			break;
+		}
+		case GUIClientHeader::SetValue: {
+			std::vector<uint8_t> remainingData(value.begin() + 5, value.end());
+			handleGUISetValueRequest(remainingData);
+			break;
+		}
+		default: {
+			Serial.printf("Unhandled client request with head byte: %u\n", headByte);
+		}
+	}
+}
+
+void BLELedController::handleGUISetValueRequest(const std::vector<uint8_t>& content) {
+	if (!internal->guiData) {
+		return;
+	}
+
+	if (content.size() < 4) {
+		return;
+	}
+
+	uint32_t keyLength = PeekUInt32(content.data() + 0);
+
+	if (content.size() < 4 + keyLength) {
+		return;
+	}
+
+	std::string name = {reinterpret_cast<const char*>(content.data() + 4), reinterpret_cast<const char*>(content.data() + 4 + keyLength)};
+	std::vector<std::string> path = SplitString(name, ",");
+
+	size_t offset = 4 + keyLength;
+
+	if (content.size() < offset + 1) {
+		return;
+	}
+
+	ValueType type = static_cast<ValueType>(content[offset]);
+
+	switch (type) {
+		case ValueType::Number: {
+			if (content.size() < offset + 5) {
+				return;
+			}
+
+			uint32_t value = PeekUInt32(content.data() + offset + 1);
+			internal->guiData->setValue(path, webgui::Int32ValueWrapper(value));
+			break;
+		}
+		case ValueType::Boolean: {
+			if (content.size() < offset + 2) {
+				return;
+			}
+
+			bool value = PeekUInt8(content.data() + offset + 1);
+			internal->guiData->setValue(path, webgui::BooleanValueWrapper(value));
+			break;
+		}
+		default:
+			Serial.printf("Unhandled value data type: %u\n", type);
+			return;
+	}
+}
+
+void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) const {
 	for (auto& i : uuidToCharacteristicMap) {
 		uint8_t buffer[128];
 		buffer[0] = 0x01;
@@ -264,6 +391,36 @@ void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) {
 
 		characteristic.notify(buffer, length);
 	}
+}
+
+void BLELedController::writeGUIInfoDataV1(NimBLECharacteristic& characteristic, uint32_t requestId) const {
+    std::string json = internal->guiData ? internal->guiData->toJSON() : "{}";
+
+    writeCharacteristicData(characteristic, uint8_t(GUIServerHeader::GUIData), requestId, reinterpret_cast<const uint8_t*>(json.data()), json.size());
+}
+
+void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, uint32_t length) const {
+    std::array<uint8_t, 128> sendBuffer;
+    static_assert(sendBuffer.size() >= 9);
+
+    sendBuffer[0] = headByte;
+    *reinterpret_cast<uint32_t*>(sendBuffer.data() + 1) = htonl(requestId);
+    *reinterpret_cast<uint32_t*>(sendBuffer.data() + 5) = htonl(length);
+
+    size_t offset = std::min(sendBuffer.size() - 9, length);
+    memcpy(sendBuffer.data() + 9, data, offset);
+
+    // Write first chunk
+    size_t firstChunkSize = 9 + offset;
+    characteristic.notify(sendBuffer.data(), firstChunkSize);
+
+    // Send remaining data
+    while (length > offset) {
+        size_t blockSize = std::min(length - offset, sendBuffer.size());
+
+        characteristic.notify(data + offset, blockSize);
+        offset += blockSize;
+    }
 }
 
 void BLELedController::OnCharacteristicWritten(BLECharacteristic* characteristic) {

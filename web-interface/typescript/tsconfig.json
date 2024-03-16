@@ -79,6 +79,12 @@
     "UIElement/UICheckBoxElement.ts",
     "UIElement/UIRangeElement.ts",
 
+    "GUIProtocol/GUIProtocol.ts",
+    "GUIProtocol/DataBuilder.ts",
+    "GUIProtocol/BLEDataWriter.ts",
+    "GUIProtocol/BLEDataReader.ts",
+    "GUIProtocol/Json2Ui.ts",
+
     // app code
     "ui.ts",
     "globals.ts",
