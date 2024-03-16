@@ -1,8 +1,8 @@
 enum ValueType {
-	Number,
-	String,
-	Boolean,
-	RGBWColor,
+	Number = 0,
+	String = 1,
+	Boolean = 2,
+	RGBWColor = 3,
 }
 
 class ValueWrapper {
@@ -14,25 +14,25 @@ class ValueWrapper {
 		this.value = value;
 	}
 
-	getNumberValue() : Number {
+	getNumberValue() : number {
 		if (this.type === ValueType.Number) {
-			return <Number>this.value;
+			return <number>this.value;
 		}
 
 		throw 'Wrong data type: ' + this.type;
 	}
 
-	getStringValue() : String {
+	getStringValue() : string {
 		if (this.type === ValueType.String) {
-			return <String>this.value;
+			return <string>this.value;
 		}
 
 		throw 'Wrong data type: ' + this.type;
 	}
 
-	getBooleanValue() : Boolean {
+	getBooleanValue() : boolean {
 		if (this.type === ValueType.Boolean) {
-			return <Boolean>this.value;
+			return <boolean>this.value;
 		}
 
 		throw 'Wrong data type: ' + this.type;
