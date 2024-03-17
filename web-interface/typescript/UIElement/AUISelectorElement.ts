@@ -23,4 +23,14 @@ abstract class AUISelectorElement extends AUIElement {
 	getSelectedOption() : string {
 		return this.optionNames[this.selectedIndex];
 	}
+
+	override setPathValue(path: string[], newValue: ValueWrapper) {
+		this.checkValidPath(path);
+
+		if (newValue.type !== ValueType.Number) {
+			throw 'Try to set a incompatible value type';
+		}
+
+		this.setSelectedIndex(newValue.getNumberValue());
+	}
 }

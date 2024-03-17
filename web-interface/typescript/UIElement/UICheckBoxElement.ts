@@ -26,6 +26,16 @@ class UICheckBoxElement extends AUIElement {
 		this.checkbox.checked = newState;
 	}
 
+	override setPathValue(path: string[], newValue: ValueWrapper) {
+		this.checkValidPath(path);
+
+		if (newValue.type !== ValueType.Boolean) {
+			throw 'Try to set a incompatible value type';
+		}
+
+		this.setState(newValue.getBooleanValue());
+	}
+
 	override onInputValueChange() {
 		const newState: boolean = this.checkbox.checked;
 

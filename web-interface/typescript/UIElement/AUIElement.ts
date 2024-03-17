@@ -19,6 +19,18 @@ abstract class AUIElement {
 
 	abstract getDomRootElement() : HTMLElement;
 
+	/**
+	 * Sets a new value on the control elements specified by the path.
+	 * \throws a exception when the path or the data type is invalid.
+	 */
+	abstract setPathValue(path: string[], newValue: ValueWrapper) : void;
+
+	protected checkValidPath(path: string[]) {
+		if (path.length != 1 || path[0] !== this.getName()) {
+			throw "Invalid path, got '" + path.toString() + " but is '" + this.getName() + "'";
+		}
+	}
+
 	getParent() : UIGroupElement | null {
 		return this.parent;
 	}

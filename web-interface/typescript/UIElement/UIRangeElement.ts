@@ -37,6 +37,16 @@ class UIRangeElement extends AUIElement {
 		this.range.value = '' + newValue;
 	}
 
+	override setPathValue(path: string[], newValue: ValueWrapper) {
+		this.checkValidPath(path);
+
+		if (newValue.type !== ValueType.Number) {
+			throw 'Try to set a incompatible value type';
+		}
+
+		this.setValue(newValue.getNumberValue());
+	}
+
 	getValue() : number {
 		return parseInt(this.range.value);
 	}

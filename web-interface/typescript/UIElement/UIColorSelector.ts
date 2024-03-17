@@ -93,6 +93,16 @@ class UIColorSelector extends AUIElement {
 		return this._getSliderColorValue();
 	}
 
+	override setPathValue(path: string[], newValue: ValueWrapper) {
+		this.checkValidPath(path);
+
+		if (newValue.type !== ValueType.RGBWColor) {
+			throw 'Try to set a incompatible value type';
+		}
+
+		this.setValue(newValue.getRGBWValue());
+	}
+
 	onColorChange(newColor: RGBWColor) {
 		// Update all elements
 		this.setValue(newColor);

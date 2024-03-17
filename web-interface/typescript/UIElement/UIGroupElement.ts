@@ -30,6 +30,18 @@ class UIGroupElement extends AUIElement {
 		return this.container;
 	}
 
+	override setPathValue(path: string[], newValue: ValueWrapper) : void {
+		if (path.length < 2 || path[0] !== this.getName())
+			throw 'Invalid path';
+
+		const child = this.getChildByName(path[1]);
+
+		if (!child)
+			throw 'Child not present!';
+
+		child.setPathValue(path.slice(1), newValue);
+	}
+
 	addRGBWColorPicker(name: string, colorChannels: ColorChannels) : UIColorSelector {
 		const colorSelector = new UIColorSelector(name, this, colorChannels);
 		this._addChildElement(colorSelector);
