@@ -16,11 +16,12 @@ class UIRangeElement extends AUIElement {
 			this.onInputValueChange();
 		}
 
+		const spanDiv = HTML_CreateDivElement('span');
 		const span = HTML_CreateSpanElement(name);
-		const br = HTML_CreateBrElement();
 
-		this.container.appendChild(span);
-		this.container.appendChild(br);
+		spanDiv.appendChild(span);
+
+		this.container.appendChild(spanDiv);
 		this.container.appendChild(this.range);
 	}
 
