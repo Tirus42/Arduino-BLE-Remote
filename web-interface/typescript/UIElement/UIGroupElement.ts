@@ -66,8 +66,14 @@ class UIGroupElement extends AUIElement {
 		return element;
 	}
 
-	addRange(name: string, min: number, max: number, value: number) : UIRangeElement{
+	addRange(name: string, min: number, max: number, value: number) : UIRangeElement {
 		const element = new UIRangeElement(name, this, min, max, value);
+		this._addChildElement(element);
+		return element;
+	}
+
+	addButton(name: string) : UIButtonElement {
+		const element = new UIButtonElement(name, this);
 		this._addChildElement(element);
 		return element;
 	}

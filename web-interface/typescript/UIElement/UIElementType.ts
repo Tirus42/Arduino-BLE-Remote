@@ -5,4 +5,5 @@ enum UIElementType {
 	DropDownSelector,
 	CheckBoxSelector,
 	RangeSelector,
+	Button,
 }

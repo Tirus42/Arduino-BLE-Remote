@@ -79,6 +79,11 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			break;
 		}
 
+		case 'button': {
+			currentRoot.addButton(jName);
+			break;
+		}
+
 		default:
 			Log("Unhandled JSON element type: '" + jType + "'");
 			break;

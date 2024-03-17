@@ -79,6 +79,7 @@
     "UIElement/UIRadioElement.ts",
     "UIElement/UICheckBoxElement.ts",
     "UIElement/UIRangeElement.ts",
+    "UIElement/UIButtonElement.ts",
 
     "GUIProtocol/GUIProtocol.ts",
     "GUIProtocol/DataBuilder.ts",

@@ -31,6 +31,23 @@ struct ADataHandler : public IDataHandler<T> {
 	}
 };
 
+struct ITriggerHandler {
+	virtual ~ITriggerHandler() = default;
+
+	virtual void onTrigger() = 0;
+};
+
+struct FunctionTrigger : public ITriggerHandler {
+	std::function<void()> triggerFunction;
+
+	FunctionTrigger(const std::function<void()>& triggerFunction) :
+		triggerFunction(triggerFunction) {}
+
+	virtual void onTrigger() override {
+		triggerFunction();
+	}
+};
+
 typedef IDataHandler<bool> IBoolDataHandler;
 typedef IDataHandler<int32_t> IInt32DataHandler;
 typedef IDataHandler<uint16_t> IUInt16DataHandler;
@@ -304,6 +321,30 @@ struct DropDownElement : public AElementWithItems {
 	}
 };
 
+struct ButtonElement : public AControlElementWithParent {
+	std::shared_ptr<ITriggerHandler> triggerHandler;
+
+	ButtonElement(GroupElement* parent, const std::string& name, std::shared_ptr<ITriggerHandler> triggerHandler) :
+		AControlElementWithParent(parent, name),
+		triggerHandler(triggerHandler) {}
+
+	GroupElement* endButton() {
+		return parent;
+	}
+
+	virtual std::string toJSON() const override {
+		return jsonPrefix("button") + "}"_s;
+	}
+
+	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
+		if (path.size() != 1 || path[0] != name || !triggerHandler)
+			return false;
+
+		triggerHandler->onTrigger();
+		return true;
+	}
+};
+
 struct GroupElement : public AControlElementWithParent {
 	std::vector<std::unique_ptr<AControlElement>> elements;
 
@@ -339,6 +380,10 @@ struct GroupElement : public AControlElementWithParent {
 
 	DropDownElement* addDropDown(std::string name, const std::vector<std::string>& items, std::shared_ptr<IUInt16DataHandler> dataHandler) {
 		return _addElement(std::make_unique<DropDownElement>(this, name, items, dataHandler));
+	}
+
+	ButtonElement* addButton(std::string name, std::shared_ptr<ITriggerHandler> triggerHandler) {
+		return _addElement(std::make_unique<ButtonElement>(this, name, triggerHandler));
 	}
 
 	virtual std::string toJSON() const override {
