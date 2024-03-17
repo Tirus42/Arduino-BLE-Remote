@@ -20,9 +20,9 @@ function CreateRangeSlider(id: string, title: string, onColorChangeFunction: () 
 		onColorChangeFunction();
 	}
 
-	const text = HTML_CreateSpanElement(title);
+	const text = HTML.CreateSpanElement(title);
 
-	const container = HTML_CreateDivElement();// document.createElement('div');
+	const container = HTML.CreateDivElement();
 
 	if (containerClass) {
 		container.classList.add('slider-background');

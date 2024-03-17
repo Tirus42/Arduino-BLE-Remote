@@ -6,9 +6,9 @@ class UICheckBoxElement extends AUIElement {
 	constructor(name: string, parent: UIGroupElement, value: boolean) {
 		super(UIElementType.CheckBoxSelector, name, parent);
 
-		this.container = HTML_CreateDivElement('check');
-		this.label = HTML_CreateLabelElement(name);
-		this.checkbox = HTML_CreateCheckboxElement(value);
+		this.container = HTML.CreateDivElement('check');
+		this.label = HTML.CreateLabelElement(name);
+		this.checkbox = HTML.CreateCheckboxElement(value);
 
 		this.checkbox.oninput = () => {
 			this.onInputValueChange();

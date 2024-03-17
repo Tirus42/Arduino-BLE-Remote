@@ -8,18 +8,18 @@ class UIRadioElement extends AUISelectorElement {
 	constructor(name: string, parent: UIGroupElement | null, optionNames: string[], selectedIndex = 0) {
 		super(UIElementType.RadioSelector, name, parent, optionNames);
 
-		this.container = HTML_CreateDivElement(['bevel', 'radio'])
-		this.spanDiv = HTML_CreateDivElement('span');
-		this.span = HTML_CreateSpanElement(name);
-		this.innerDiv = HTML_CreateDivElement();
+		this.container = HTML.CreateDivElement(['bevel', 'radio'])
+		this.spanDiv = HTML.CreateDivElement('span');
+		this.span = HTML.CreateSpanElement(name);
+		this.innerDiv = HTML.CreateDivElement();
 		this.options = [];
 
-		const select = HTML_CreateSelectElement();
+		const select = HTML.CreateSelectElement();
 
 		for (let i = 0; i < optionNames.length; ++i) {
 			const entry = optionNames[i];
-			const label = HTML_CreateLabelElement('&nbsp;' + entry);
-			const option = HTML_CreateRadioElement(name, entry);
+			const label = HTML.CreateLabelElement('&nbsp;' + entry);
+			const option = HTML.CreateRadioElement(name, entry);
 
 			option.oninput = () => {
 				this.onInputValueChange();

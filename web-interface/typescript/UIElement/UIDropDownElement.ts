@@ -7,9 +7,9 @@ class UIDropDownElement extends AUISelectorElement {
 	constructor(name: string, parent: UIGroupElement | null, optionNames: string[], selectedIndex = 0) {
 		super(UIElementType.DropDownSelector, name, parent, optionNames);
 
-		this.container = HTML_CreateDivElement('select');
-		this.nameDiv = HTML_CreateDivElement();
-		this.dropDown = HTML_CreateSelectElement();
+		this.container = HTML.CreateDivElement('select');
+		this.nameDiv = HTML.CreateDivElement();
+		this.dropDown = HTML.CreateSelectElement();
 		this.options = [];
 
 		this.nameDiv.innerText = name;
@@ -18,7 +18,7 @@ class UIDropDownElement extends AUISelectorElement {
 		}
 
 		for (let i = 0; i < optionNames.length; ++i) {
-			const option = HTML_CreateOptionElement(optionNames[i]);
+			const option = HTML.CreateOptionElement(optionNames[i]);
 			option.innerText = optionNames[i];
 
 			if (i == selectedIndex) {

@@ -6,12 +6,12 @@ class UIGroupElement extends AUIElement {
 	constructor(name: string, parent: UIGroupElement | null) {
 		super(UIElementType.Group, name, parent);
 
-		this.container = HTML_CreateDivElement('bevel');
-		this.headerDiv = HTML_CreateDivElement('span');
+		this.container = HTML.CreateDivElement('bevel');
+		this.headerDiv = HTML.CreateDivElement('span');
 		this.elements = []
 
 		{
-			this.addToGroupHeader(HTML_CreateSpanElement(this.name));
+			this.addToGroupHeader(HTML.CreateSpanElement(this.name));
 			this.container.appendChild(this.headerDiv);
 		}
 

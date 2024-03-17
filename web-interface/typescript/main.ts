@@ -27,7 +27,7 @@ class DeviceConnection extends UIGroupElement {
 		this.modelName = null;
 
 		this.classicCharacteristicMapping = new Map();
-		this.buttonDisconnect = HTML_CreateButtonElement('Disconnect');
+		this.buttonDisconnect = HTML.CreateButtonElement('Disconnect');
 		this.disconnectHandler = () => {this.disconnect();};
 		this.connectionFailedHandler = (err) => {this._connectionFailed(err);}
 		this.ledInfoChangeHandler = (event: Event) => {this._handleLedInfoEvent(event);};
@@ -363,7 +363,7 @@ function Init() {
 		Log("==> Adding test GUI elements <==");
 
 		const rootGroup = new UIGroupElement('Test group', null);
-		rootGroup.addToGroupHeader(HTML_CreateButtonElement('Test button without a function'));
+		rootGroup.addToGroupHeader(HTML.CreateButtonElement('Test button without a function'));
 		rootGroup.addRGBWColorPicker('Test color selection', new ColorChannels());
 
 		const nestedGroup = rootGroup.addGroup('Sub Group');

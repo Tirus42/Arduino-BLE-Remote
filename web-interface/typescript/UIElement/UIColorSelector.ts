@@ -9,9 +9,9 @@ class UIColorSelector extends AUIElement {
 	constructor(name: string, parent: UIGroupElement, colorChannels: ColorChannels) {
 		super(UIElementType.ColorSelector, name, parent);
 
-		this.container = HTML_CreateDivElement('control-panel');
+		this.container = HTML.CreateDivElement('control-panel');
 
-		this.colorPicker = HTML_CreateColorPickerElement();
+		this.colorPicker = HTML.CreateColorPickerElement();
 
 		this.colorPicker.oninput = (_: Event) => {
 			const htmlColor = this.colorPicker.value;
@@ -22,11 +22,11 @@ class UIColorSelector extends AUIElement {
 
 		this.colorPicker.dataset.name = name;
 
-		const colorPickerText = HTML_CreateSpanElement(' ' + name);
+		const colorPickerText = HTML.CreateSpanElement(' ' + name);
 
 		this.container.appendChild(this.colorPicker);
 		this.container.appendChild(colorPickerText);
-		this.container.appendChild(HTML_CreateBrElement());
+		this.container.appendChild(HTML.CreateBrElement());
 
 		const pElement = document.createElement('p');
 

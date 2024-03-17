@@ -7,8 +7,8 @@ class UIRangeElement extends AUIElement {
 	constructor(name: string, parent: UIGroupElement, min: number, max: number, value: number) {
 		super(UIElementType.RangeSelector, name, parent);
 
-		this.container = HTML_CreateDivElement('bevel');
-		this.range = HTML_CreateRangeElement(min, max, value);
+		this.container = HTML.CreateDivElement('bevel');
+		this.range = HTML.CreateRangeElement(min, max, value);
 		this.minValue = min;
 		this.maxValue = max;
 
@@ -16,8 +16,8 @@ class UIRangeElement extends AUIElement {
 			this.onInputValueChange();
 		}
 
-		const spanDiv = HTML_CreateDivElement('span');
-		const span = HTML_CreateSpanElement(name);
+		const spanDiv = HTML.CreateDivElement('span');
+		const span = HTML.CreateSpanElement(name);
 
 		spanDiv.appendChild(span);
 
