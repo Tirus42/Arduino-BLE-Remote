@@ -82,32 +82,40 @@ class GUIProtocolHandler {
 	}
 
 	private _handlePacketBegin(data: Uint8Array) {
+		const content = new DataView(data.buffer.slice(1));
+
 		switch (data[0]) {
 			case GUIServerHeader.GUIData: {
-				const requestId = new DataView(data.buffer).getUint32(1, false);
-				const length = new DataView(data.buffer).getUint32(5, false);
-
-				const isOwnRequest : boolean = this.pendingRequestIds.has(requestId);
-
-				Log("JSON data length: " + length + " bytes, is own request: " + isOwnRequest);
-
-				const ref = this;
-
-				this.recvPendingData = new BLEDataReader(length, data.subarray(9), function(wholeBlock: Uint8Array) {
-					const jsonString = DecodeUTF8String(wholeBlock);
-					const object = <ADataJSON>JSON.parse(jsonString);
-
-					if (isOwnRequest) {
-						ref.pendingRequestIds.delete(requestId);
-						ref.onGuiJsonCallback(object);
-					}
-				});
-
+				this._handlePacket_GUIData(content)
 				break;
 			}
-
 			default:
-				Log("Reveived unknown data for the GUI!");
+				Log("Reveived unknown data for the GUI!, packet id: " + data[0]);
 		}
+	}
+
+	private _handlePacket_GUIData(content: DataView) {
+		const reader : BufferReader = new BufferReader(content);
+
+		const requestId = reader.extractUint32();// new DataView(data.buffer).getUint32(1, false);
+		const length = reader.extractUint32();// new DataView(data.buffer).getUint32(5, false);
+
+		const isOwnRequest : boolean = this.pendingRequestIds.has(requestId);
+
+		Log("JSON data length: " + length + " bytes, is own request: " + isOwnRequest);
+
+		const ref = this;
+
+		const remainingContent = new Uint8Array(reader.extractRemainingData().buffer);
+
+		this.recvPendingData = new BLEDataReader(length, remainingContent, function(wholeBlock: Uint8Array) {
+			const jsonString = DecodeUTF8String(wholeBlock);
+			const object = <ADataJSON>JSON.parse(jsonString);
+
+			if (isOwnRequest) {
+				ref.pendingRequestIds.delete(requestId);
+				ref.onGuiJsonCallback(object);
+			}
+		});
 	}
 }
