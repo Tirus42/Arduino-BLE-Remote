@@ -1,6 +1,8 @@
 #pragma once
 
 #include <stdint.h>
+#include <vector>
+#include <string>
 
 enum class GUIClientHeader : uint8_t {
 	RequestGUI = 0x00,
@@ -11,13 +13,7 @@ enum class GUIClientHeader : uint8_t {
 
 enum class GUIServerHeader : uint8_t {
 	GUIData = 0x00,
-};
-
-enum class ValueType : uint8_t {
-	Number = 0,
-	String = 1,
-	Boolean = 2,
-	RGBWColor = 3,
+	UpdateValue = 0x01,
 };
 
 
@@ -43,4 +39,13 @@ inline uint32_t PeekUInt32(const void* ptr) {
 
 inline void PokeUInt32(void* ptr, uint32_t value) {
 	PokeData(ptr, value);
+}
+
+std::vector<uint8_t> StringToLengthPrefixedVector(const std::string& str) {
+	std::vector<uint8_t> result(4 + str.size());
+
+	PokeUInt32(result.data(), str.size());
+	memcpy(result.data() + 4, str.data(), str.size());
+
+	return result;
 }

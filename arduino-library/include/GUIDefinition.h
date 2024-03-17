@@ -36,8 +36,17 @@ typedef IDataHandler<int32_t> IInt32DataHandler;
 typedef IDataHandler<uint16_t> IUInt16DataHandler;
 typedef IDataHandler<std::string> IStringDataHandler;
 
+enum class ValueType : uint8_t {
+	Number = 0,
+	String = 1,
+	Boolean = 2,
+	RGBWColor = 3,
+};
+
 struct AValueWrapper {
 	virtual ~AValueWrapper() = default;
+
+	virtual ValueType getType() const = 0;
 
 	virtual std::string getAsString() const = 0;
 	virtual int32_t getAsInt32() const = 0;
@@ -49,6 +58,10 @@ struct BooleanValueWrapper : public AValueWrapper {
 
 	BooleanValueWrapper(bool value) :
 		value(value) {}
+
+	virtual ValueType getType() const override {
+		return ValueType::Boolean;
+	}
 
 	virtual std::string getAsString() const override {
 		return value ? "true" : "false";
@@ -68,6 +81,10 @@ struct Int32ValueWrapper : public AValueWrapper {
 
 	Int32ValueWrapper(int32_t value) :
 		value(value) {}
+
+	virtual ValueType getType() const override {
+		return ValueType::Number;
+	}
 
 	virtual std::string getAsString() const override {
 		std::stringstream s;
@@ -89,6 +106,10 @@ struct StringValueWrapper : public AValueWrapper {
 
 	StringValueWrapper(const std::string& value) :
 		value(value) {}
+
+	virtual ValueType getType() const override {
+		return ValueType::String;
+	}
 
 	virtual std::string getAsString() const override {
 		return value;

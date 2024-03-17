@@ -175,7 +175,13 @@ class DeviceConnection extends UIGroupElement {
 				ProcessJSON(this, json);
 			}
 
-			this.guiControl = new GUIProtocolHandler(characteristic, handleJsonFunction);
+			const handleUpdateValueFunction = (path: string[], newValue: ValueWrapper) => {
+				const completePath : string[] = [this.getName()].concat(path);
+
+				this.setPathValue(completePath, newValue);
+			}
+
+			this.guiControl = new GUIProtocolHandler(characteristic, handleJsonFunction, handleUpdateValueFunction);
 		}
 	}
 

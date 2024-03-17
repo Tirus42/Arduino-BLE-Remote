@@ -6,12 +6,14 @@
 #include <UUID.h>
 
 #include <functional>
+#include <vector>
 #include <string>
 
 class NimBLECharacteristic;
 
 namespace webgui {
 	class RootElement;
+	struct AValueWrapper;
 }
 
 class BLELedController {
@@ -32,8 +34,11 @@ class BLELedController {
 		void writeLedInfoDataV1(NimBLECharacteristic& characteristic) const;
 
 		void writeGUIInfoDataV1(NimBLECharacteristic& characteristic, uint32_t requestId) const;
+		void writeGUIUpdateValue(NimBLECharacteristic& characteristic, uint32_t requestId, const std::vector<std::string>& path, const webgui::AValueWrapper& value) const;
+		void writeGUIUpdateValue(NimBLECharacteristic& characteristic, uint32_t requestId, const std::string& name, const webgui::AValueWrapper& value) const;
+
 		void handleGUIRequest(NimBLECharacteristic& characteristic);
-		void handleGUISetValueRequest(const std::vector<uint8_t>& content);
+		void handleGUISetValueRequest(uint32_t requestId, const std::vector<uint8_t>& content);
 
 		/**
 		 * Writes a block of data to the characteristic. When the data is longer then the transmission size, it will be split

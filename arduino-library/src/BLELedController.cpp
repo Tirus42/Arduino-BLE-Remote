@@ -310,7 +310,7 @@ void BLELedController::handleGUIRequest(BLECharacteristic& characteristic) {
 		}
 		case GUIClientHeader::SetValue: {
 			std::vector<uint8_t> remainingData(value.begin() + 5, value.end());
-			handleGUISetValueRequest(remainingData);
+			handleGUISetValueRequest(requestId, remainingData);
 			break;
 		}
 		default: {
@@ -319,7 +319,7 @@ void BLELedController::handleGUIRequest(BLECharacteristic& characteristic) {
 	}
 }
 
-void BLELedController::handleGUISetValueRequest(const std::vector<uint8_t>& content) {
+void BLELedController::handleGUISetValueRequest(uint32_t requestId, const std::vector<uint8_t>& content) {
 	if (!internal->guiData) {
 		return;
 	}
@@ -343,6 +343,8 @@ void BLELedController::handleGUISetValueRequest(const std::vector<uint8_t>& cont
 		return;
 	}
 
+	using ValueType = webgui::ValueType;
+
 	ValueType type = static_cast<ValueType>(content[offset]);
 
 	switch (type) {
@@ -353,6 +355,7 @@ void BLELedController::handleGUISetValueRequest(const std::vector<uint8_t>& cont
 
 			uint32_t value = PeekUInt32(content.data() + offset + 1);
 			internal->guiData->setValue(path, webgui::Int32ValueWrapper(value));
+			writeGUIUpdateValue(*internal->guiCharacteristic, requestId, name, webgui::Int32ValueWrapper(value));
 			break;
 		}
 		case ValueType::Boolean: {
@@ -362,6 +365,7 @@ void BLELedController::handleGUISetValueRequest(const std::vector<uint8_t>& cont
 
 			bool value = PeekUInt8(content.data() + offset + 1);
 			internal->guiData->setValue(path, webgui::BooleanValueWrapper(value));
+			writeGUIUpdateValue(*internal->guiCharacteristic, requestId, name, webgui::BooleanValueWrapper(value));
 			break;
 		}
 		default:
@@ -397,6 +401,53 @@ void BLELedController::writeGUIInfoDataV1(NimBLECharacteristic& characteristic, 
     std::string json = internal->guiData ? internal->guiData->toJSON() : "{}";
 
     writeCharacteristicData(characteristic, uint8_t(GUIServerHeader::GUIData), requestId, reinterpret_cast<const uint8_t*>(json.data()), json.size());
+}
+
+void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic, uint32_t requestId, const std::vector<std::string>& path, const webgui::AValueWrapper& value) const {
+	std::string concat;
+
+	for (size_t i = 0; i < path.size(); ++i) {
+		concat += path[i];
+
+		if (i +1 < path.size()) {
+			concat += ',';
+		}
+	}
+
+	writeGUIUpdateValue(characteristic, requestId, concat, value);
+}
+
+static std::vector<uint8_t> MergeVectors(const std::vector<uint8_t>& vector0, const std::vector<uint8_t>& vector1) {
+	std::vector<uint8_t> result(vector0.size() + vector1.size());
+	memcpy(result.data() + 0, vector0.data(), vector0.size());
+	memcpy(result.data() + vector0.size(), vector1.data(), vector1.size());
+	return result;
+}
+
+void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic, uint32_t requestId, const std::string& name, const webgui::AValueWrapper& value) const {
+	std::vector<uint8_t> namePart = StringToLengthPrefixedVector(name);
+	std::vector<uint8_t> valuePart(1);
+
+	valuePart[0] = uint8_t(value.getType());
+
+	using ValueType = webgui::ValueType;
+
+	switch (value.getType()) {
+		case ValueType::Number: {
+			valuePart.resize(5);
+			PokeUInt32(valuePart.data() + 1, value.getAsInt32());
+			break;
+		}
+		case ValueType::Boolean: {
+			valuePart.resize(2);
+			valuePart[1] = value.getAsBool();
+			break;
+		}
+	}
+
+	std::vector<uint8_t> content = MergeVectors(namePart, valuePart);
+
+	writeCharacteristicData(characteristic, uint8_t(GUIServerHeader::UpdateValue), requestId, content.data(), content.size());
 }
 
 void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, uint32_t length) const {

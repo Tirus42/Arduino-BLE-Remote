@@ -28,7 +28,7 @@ function EncodeUTF8String(str: string) : Uint8Array {
 	return enc.encode(str);
 }
 
-function DecodeUTF8String(data: DataView | Uint8Array) : string {
+function DecodeUTF8String(data: DataView | Uint8Array | ArrayBuffer) : string {
 	const dec = new TextDecoder("utf-8");
 	return dec.decode(data);
 }

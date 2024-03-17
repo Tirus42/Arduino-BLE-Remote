@@ -5,19 +5,22 @@ enum GUIClientHeader {
 
 enum GUIServerHeader {
 	GUIData = 0x00,
+	UpdateValue = 0x01,
 }
 
 class GUIProtocolHandler {
 	characteristic: BluetoothRemoteGATTCharacteristic;
 	onGuiJsonCallback: (json: ADataJSON) => void;
+	onValueUpdateCallback: (path: string[], newValue: ValueWrapper) => void;
 	dataWriter: BLEDataWriter;
 	onCharacteristicChanged: (event: Event) => void;
 	recvPendingData : BLEDataReader | undefined;
 	pendingRequestIds: Set<number>;
 
-	constructor(characteristic: BluetoothRemoteGATTCharacteristic, onGuiJsonCallback: (json: ADataJSON) => void) {
+	constructor(characteristic: BluetoothRemoteGATTCharacteristic, onGuiJsonCallback: (json: ADataJSON) => void, onValueUpdateCallback: (path: string[], newValue: ValueWrapper) => void) {
 		this.characteristic = characteristic;
 		this.onGuiJsonCallback = onGuiJsonCallback;
+		this.onValueUpdateCallback = onValueUpdateCallback;
 		this.dataWriter = new BLEDataWriter(characteristic);
 		this.onCharacteristicChanged = (event: Event) => {this._onCharacteristicChanged(event);};
 		this.pendingRequestIds = new Set();
@@ -89,6 +92,10 @@ class GUIProtocolHandler {
 				this._handlePacket_GUIData(content)
 				break;
 			}
+			case GUIServerHeader.UpdateValue: {
+				this._handlePacket_UpdateValue(content);
+				break;
+			}
 			default:
 				Log("Reveived unknown data for the GUI!, packet id: " + data[0]);
 		}
@@ -117,5 +124,41 @@ class GUIProtocolHandler {
 				ref.onGuiJsonCallback(object);
 			}
 		});
+	}
+
+	private _handlePacket_UpdateValue(content: DataView) {
+		const reader : BufferReader = new BufferReader(content);
+
+		const requestId = reader.extractUint32();
+		const length = reader.extractUint32();
+
+		const isOwnRequest : boolean = this.pendingRequestIds.has(requestId);
+
+		if (isOwnRequest) {
+			// We don't need to handle our own value updates, ignore them
+			return;
+		}
+
+		// Value update by another instance (or remote itself)
+		const key = reader.extractString();
+		const valueType = reader.extractUint8()
+
+		switch (valueType) {
+			case ValueType.Number: {
+				const numberValue : number = reader.extractInt32(true);
+
+				this.onValueUpdateCallback(key.split(','), new ValueWrapper(numberValue));
+				break;
+			}
+			case ValueType.Boolean: {
+				const boolValue : boolean = reader.extractUint8() > 0;
+
+				this.onValueUpdateCallback(key.split(','), new ValueWrapper(boolValue));
+				break;
+			}
+			default: {
+				Log("Received unhandled data type " + valueType + " via UpdateValue packet.");
+			}
+		}
 	}
 }
