@@ -19,7 +19,7 @@ class UIGroupElement extends AUIElement {
 		parentHTMLElement.appendChild(this.container);
 	}
 
-	destroy() {
+	override destroy() {
 		const parentHTMLContainer = this.parent ? this.parent.container : document.body;
 		parentHTMLContainer.removeChild(this.container);
 

@@ -61,6 +61,7 @@
 
     "outFile": "../ble.js",
     "module": "AMD",
+    "noImplicitOverride": true,
 },
   "files": [
     // external

@@ -48,7 +48,7 @@ class DeviceConnection extends UIGroupElement {
 		}
 	}
 
-	destroy() {
+	override destroy() {
 		this.device.removeEventListener('gattserverdisconnected', this.disconnectHandler);
 
 		if (this.ledInfoCharacteristic) {
@@ -121,7 +121,7 @@ class DeviceConnection extends UIGroupElement {
 		return this.removeChildByName(name);
 	}
 
-	onInputValueChange(sourceElement: AUIElement, newValue: ValueWrapper) {
+	override onInputValueChange(sourceElement: AUIElement, newValue: ValueWrapper) {
 		const sourceAbsoluteName = sourceElement.getAbsoluteName();
 
 		if (this._handleClassicCharacteristicMapping(sourceAbsoluteName, sourceElement, newValue))

@@ -41,7 +41,7 @@ class UIRangeElement extends AUIElement {
 		return parseInt(this.range.value);
 	}
 
-	onInputValueChange() {
+	override onInputValueChange() {
 		super.onInputValueChange(this, new ValueWrapper(this.getValue()));
 	}
 }

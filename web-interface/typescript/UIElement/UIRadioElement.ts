@@ -44,13 +44,13 @@ class UIRadioElement extends AUISelectorElement {
 		return this.container;
 	}
 
-	setSelectedIndex(newSelectedIndex: number) {
+	override setSelectedIndex(newSelectedIndex: number) {
 		super.setSelectedIndex(newSelectedIndex);
 
 		this.options[newSelectedIndex].checked = true;
 	}
 
-	onInputValueChange() {
+	override onInputValueChange() {
 		for (let i = 0; i < this.options.length; ++i) {
 			if (this.options[i].checked) {
 				this.setSelectedIndex(i);
