@@ -11,7 +11,7 @@ class PacketBuilder {
 
 	static CreateUInt32(number: number) : Uint8Array {
 		const data = new Uint8Array(4);
-		new DataView(data.buffer).setUint32(0, number, true);
+		new DataView(data.buffer).setUint32(0, number, false);
 		return data;
 	}
 

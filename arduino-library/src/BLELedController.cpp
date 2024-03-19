@@ -298,7 +298,7 @@ void BLELedController::handleGUIRequest(BLECharacteristic& characteristic) {
 	NimBLEAttValue value = characteristic.getValue();
 
 	uint8_t headByte = value[0];
-	uint32_t requestId = PeekUInt32(value.begin() + 1);
+	uint32_t requestId = ntohl(PeekUInt32(value.begin() + 1));
 
 	if (headByte >= uint8_t(GUIClientHeader::COUNT))
 		return;
@@ -328,7 +328,7 @@ void BLELedController::handleGUISetValueRequest(uint32_t requestId, const std::v
 		return;
 	}
 
-	uint32_t keyLength = PeekUInt32(content.data() + 0);
+	uint32_t keyLength = ntohl(PeekUInt32(content.data() + 0));
 
 	if (content.size() < 4 + keyLength) {
 		return;
@@ -353,7 +353,7 @@ void BLELedController::handleGUISetValueRequest(uint32_t requestId, const std::v
 				return;
 			}
 
-			uint32_t value = PeekUInt32(content.data() + offset + 1);
+			uint32_t value = ntohl(PeekUInt32(content.data() + offset + 1));
 			internal->guiData->setValue(path, webgui::Int32ValueWrapper(value));
 			writeGUIUpdateValue(*internal->guiCharacteristic, requestId, name, webgui::Int32ValueWrapper(value));
 			break;
@@ -435,7 +435,7 @@ void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic,
 	switch (value.getType()) {
 		case ValueType::Number: {
 			valuePart.resize(5);
-			PokeUInt32(valuePart.data() + 1, value.getAsInt32());
+			PokeUInt32(valuePart.data() + 1, htonl(value.getAsInt32()));
 			break;
 		}
 		case ValueType::Boolean: {
@@ -455,8 +455,8 @@ void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteris
     static_assert(sendBuffer.size() >= 9);
 
     sendBuffer[0] = headByte;
-    *reinterpret_cast<uint32_t*>(sendBuffer.data() + 1) = htonl(requestId);
-    *reinterpret_cast<uint32_t*>(sendBuffer.data() + 5) = htonl(length);
+	PokeUInt32(sendBuffer.data() + 1, htonl(requestId));
+	PokeUInt32(sendBuffer.data() + 5, htonl(length));
 
     size_t offset = std::min(sendBuffer.size() - 9, length);
     memcpy(sendBuffer.data() + 9, data, offset);

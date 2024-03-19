@@ -1,4 +1,4 @@
-class BufferReader {
+class NetworkBufferReader {
 	dataView : DataView;
 	offset : number;
 
@@ -18,16 +18,16 @@ class BufferReader {
 		return value;
 	}
 
-	extractUint32(bigEndian: boolean = false) : number {
+	extractUint32() : number {
 		this._checkRange(4);
-		const value = this.dataView.getUint32(this.offset, bigEndian);
+		const value = this.dataView.getUint32(this.offset, false);
 		this.offset += 4;
 		return value;
 	}
 
-	extractInt32(bigEndian: boolean) : number {
+	extractInt32() : number {
 		this._checkRange(4);
-		const value = this.dataView.getInt32(this.offset, bigEndian);
+		const value = this.dataView.getInt32(this.offset, false);
 		this.offset += 4;
 		return value;
 	}
@@ -44,7 +44,7 @@ class BufferReader {
 	}
 
 	extractString() : string {
-		const strLength = this.extractUint32(true);	// TODO: Figure out, why this is BE
+		const strLength = this.extractUint32();
 		const strData = this.extractData(strLength);
 		return DecodeUTF8String(strData);
 	}

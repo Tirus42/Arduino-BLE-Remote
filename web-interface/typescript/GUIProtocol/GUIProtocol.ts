@@ -102,10 +102,10 @@ class GUIProtocolHandler {
 	}
 
 	private _handlePacket_GUIData(content: DataView) {
-		const reader : BufferReader = new BufferReader(content);
+		const reader : NetworkBufferReader = new NetworkBufferReader(content);
 
-		const requestId = reader.extractUint32();// new DataView(data.buffer).getUint32(1, false);
-		const length = reader.extractUint32();// new DataView(data.buffer).getUint32(5, false);
+		const requestId = reader.extractUint32();
+		const length = reader.extractUint32();
 
 		const isOwnRequest : boolean = this.pendingRequestIds.has(requestId);
 
@@ -127,7 +127,7 @@ class GUIProtocolHandler {
 	}
 
 	private _handlePacket_UpdateValue(content: DataView) {
-		const reader : BufferReader = new BufferReader(content);
+		const reader : NetworkBufferReader = new NetworkBufferReader(content);
 
 		const requestId = reader.extractUint32();
 		const length = reader.extractUint32();
@@ -145,7 +145,7 @@ class GUIProtocolHandler {
 
 		switch (valueType) {
 			case ValueType.Number: {
-				const numberValue : number = reader.extractInt32(true);
+				const numberValue : number = reader.extractInt32();
 
 				this.onValueUpdateCallback(key.split(','), new ValueWrapper(numberValue));
 				break;

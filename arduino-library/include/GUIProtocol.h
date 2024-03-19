@@ -44,7 +44,7 @@ inline void PokeUInt32(void* ptr, uint32_t value) {
 std::vector<uint8_t> StringToLengthPrefixedVector(const std::string& str) {
 	std::vector<uint8_t> result(4 + str.size());
 
-	PokeUInt32(result.data(), str.size());
+	PokeUInt32(result.data(), htonl(str.size()));
 	memcpy(result.data() + 4, str.data(), str.size());
 
 	return result;

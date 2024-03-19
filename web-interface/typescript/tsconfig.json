@@ -85,7 +85,7 @@
     "GUIProtocol/DataBuilder.ts",
     "GUIProtocol/BLEDataWriter.ts",
     "GUIProtocol/BLEDataReader.ts",
-    "GUIProtocol/BufferReader.ts",
+    "GUIProtocol/NetworkBufferReader.ts",
     "GUIProtocol/Json2Ui.ts",
 
     // app code
