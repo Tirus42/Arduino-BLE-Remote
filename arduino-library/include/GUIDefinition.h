@@ -172,7 +172,7 @@ struct AControlElement {
 	}
 
 	std::string jsonValueField(bool value) const {
-		return jsonValueField(value ? 1 : 0);
+		return jsonValueField(value ? int32_t(1) : int32_t(0));
 	}
 };
 
@@ -209,7 +209,7 @@ struct RangeElement : public AControlElementWithParent {
 		s << ",\"max\":"_s;
 		s << max;
 		s << ",";
-		s << jsonValueField(dataHandler ? dataHandler->getValue() : 0);
+		s << jsonValueField(dataHandler ? dataHandler->getValue() : int32_t(0));
 		s << "}";
 
 		return s.str();
@@ -278,7 +278,7 @@ struct AElementWithItems : public AControlElementWithParent {
 		}
 
 		s << "],";
-		s << jsonValueField(dataHandler ? dataHandler->getValue() : 0);
+		s << jsonValueField(dataHandler ? dataHandler->getValue() : int32_t(0));
 		s << "}";
 
 		return s.str();

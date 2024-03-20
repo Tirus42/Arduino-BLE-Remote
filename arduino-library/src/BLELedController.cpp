@@ -450,7 +450,7 @@ void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic,
 	writeCharacteristicData(characteristic, uint8_t(GUIServerHeader::UpdateValue), requestId, content.data(), content.size());
 }
 
-void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, uint32_t length) const {
+void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, size_t length) const {
     std::array<uint8_t, 128> sendBuffer;
     static_assert(sendBuffer.size() >= 9);
 

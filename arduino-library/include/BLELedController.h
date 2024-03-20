@@ -44,7 +44,7 @@ class BLELedController {
 		 * Writes a block of data to the characteristic. When the data is longer then the transmission size, it will be split
 		 * into several parts. The receiver can handle this by the prefixed length information.
 		 */
-		void writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, uint32_t length) const;
+		void writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, size_t length) const;
 
 		static void OnCharacteristicWritten(NimBLECharacteristic* pCharacteristic);
 		static void OnConnect(const char* remoteAddr);
