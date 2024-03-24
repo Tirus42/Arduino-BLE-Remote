@@ -141,23 +141,29 @@ class GUIProtocolHandler {
 
 		// Value update by another instance (or remote itself)
 		const key = reader.extractString();
-		const valueType = reader.extractUint8()
+		const value : ValueWrapper = this._readDataValue(reader);
+
+		try {
+			this.onValueUpdateCallback(key.split(','), value);
+		} catch (err) {
+			Log("Error during UpdateValue packet: " + err);
+		}
+	}
+
+	private _readDataValue(reader : NetworkBufferReader) : ValueWrapper {
+		const valueType = reader.extractUint8();
 
 		switch (valueType) {
 			case ValueType.Number: {
 				const numberValue : number = reader.extractInt32();
-
-				this.onValueUpdateCallback(key.split(','), new ValueWrapper(numberValue));
-				break;
+				return new ValueWrapper(numberValue);
 			}
 			case ValueType.Boolean: {
 				const boolValue : boolean = reader.extractUint8() > 0;
-
-				this.onValueUpdateCallback(key.split(','), new ValueWrapper(boolValue));
-				break;
+				return new ValueWrapper(boolValue);
 			}
 			default: {
-				Log("Received unhandled data type " + valueType + " via UpdateValue packet.");
+				throw "Received unhandled data type " + valueType + " via UpdateValue packet.";
 			}
 		}
 	}
