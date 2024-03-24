@@ -18,11 +18,11 @@ interface RangeDataJSON extends NumberValueJSON {
 
 interface CheckboxJSON extends NumberValueJSON {}
 
-interface RadioDataJSON extends ADataJSON {
+interface RadioDataJSON extends NumberValueJSON {
 	items: string[];
 }
 
-interface DropDownJSON extends ADataJSON {
+interface DropDownJSON extends NumberValueJSON {
 	items: string[];
 }
 
@@ -66,16 +66,18 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 		case 'radio': {
 			const radioNode = <RadioDataJSON>(jsonNode);
 			const entries = radioNode.items;
+			const jValue = radioNode.value;
 
-			currentRoot.addRadioGroup(jName, entries);
+			currentRoot.addRadioGroup(jName, entries, jValue);
 			break;
 		}
 
 		case 'dropdown': {
 			const dropDownNode = <DropDownJSON>(jsonNode);
 			const entries = dropDownNode.items;
+			const jValue = dropDownNode.value;
 
-			currentRoot.addDropDown(jName, entries);
+			currentRoot.addDropDown(jName, entries, jValue);
 			break;
 		}
 
