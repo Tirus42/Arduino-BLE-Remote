@@ -12,7 +12,7 @@
 class NimBLECharacteristic;
 
 namespace webgui {
-	class RootElement;
+	struct RootElement;
 	struct AValueWrapper;
 }
 

@@ -187,14 +187,32 @@ struct AControlElementWithParent : public AControlElement {
 	AControlElementWithParent& operator=(const AControlElementWithParent&) = delete;
 };
 
-struct RangeElement : public AControlElementWithParent {
+template <typename ValueHandlerType>
+struct AControlElementWithParentAndValue : public AControlElementWithParent {
+	std::shared_ptr<ValueHandlerType> dataHandler;
+
+	AControlElementWithParentAndValue(GroupElement* parent, const std::string& name, std::shared_ptr<ValueHandlerType> dataHandler) :
+		AControlElementWithParent(parent, name),
+		dataHandler(dataHandler) {}
+
+	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
+		if (path.size() != 1 || path[0] != name || !dataHandler) {
+			return false;
+		}
+
+		setValue(newValue);
+		return true;
+	}
+
+	virtual void setValue(const AValueWrapper& newValue) = 0;
+};
+
+struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler> {
 	int32_t min;
 	int32_t max;
-	std::shared_ptr<IInt32DataHandler> dataHandler;
 
 	RangeElement(GroupElement* parent, const std::string& name, int32_t min, int32_t max, std::shared_ptr<IInt32DataHandler> dataHandler) :
-		AControlElementWithParent(parent, name), min(min), max(max),
-		dataHandler(dataHandler) {};
+		AControlElementWithParentAndValue(parent, name, dataHandler), min(min), max(max) {}
 
 	GroupElement* endRange() {
 		return parent;
@@ -215,23 +233,15 @@ struct RangeElement : public AControlElementWithParent {
 		return s.str();
 	}
 
-	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
-		if (path.size() != 1 || path[0] != name || !dataHandler) {
-			return false;
-		}
-
+	virtual void setValue(const AValueWrapper& newValue) override {
 		int32_t actualValue = std::clamp(newValue.getAsInt32(), min, max);
 		dataHandler->setValue(actualValue);
-		return true;
 	}
 };
 
-struct CheckboxElement : public AControlElementWithParent {
-	std::shared_ptr<IBoolDataHandler> dataHandler;
-
+struct CheckboxElement : public AControlElementWithParentAndValue<IBoolDataHandler> {
 	CheckboxElement(GroupElement* parent, const std::string& name, std::shared_ptr<IBoolDataHandler> dataHandler) :
-		AControlElementWithParent(parent, name),
-		dataHandler(dataHandler) {}
+		AControlElementWithParentAndValue(parent, name, dataHandler) {}
 
 	GroupElement* endCheckbox() {
 		return parent;
@@ -241,24 +251,17 @@ struct CheckboxElement : public AControlElementWithParent {
 		return jsonPrefix("checkbox") + ","_s + jsonValueField(dataHandler ? dataHandler->getValue() : false) + "}"_s;
 	}
 
-	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
-		if (path.size() != 1 || path[0] != name || !dataHandler) {
-			return false;
-		}
-
+	virtual void setValue(const AValueWrapper& newValue) override {
 		dataHandler->setValue(newValue.getAsBool());
-		return true;
 	}
 };
 
-struct AElementWithItems : public AControlElementWithParent {
+struct AElementWithItems : public AControlElementWithParentAndValue<IUInt16DataHandler> {
 	std::vector<std::string> items;
-	std::shared_ptr<IUInt16DataHandler> dataHandler;
 
 	AElementWithItems(GroupElement* parent, const std::string& name, const std::vector<std::string>& items, std::shared_ptr<IUInt16DataHandler> dataHandler) :
-		AControlElementWithParent(parent, name),
-		items(items),
-		dataHandler(dataHandler) {};
+		AControlElementWithParentAndValue(parent, name, dataHandler),
+		items(items) {}
 
 	virtual std::string getElementName() const = 0;
 
@@ -284,14 +287,9 @@ struct AElementWithItems : public AControlElementWithParent {
 		return s.str();
 	}
 
-	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
-		if (path.size() != 1 || path[0] != name || !dataHandler) {
-			return false;
-		}
-
+	virtual void setValue(const AValueWrapper& newValue) override {
 		uint16_t valueIndex = std::clamp<int16_t>(newValue.getAsInt32(), 0, items.size());
 		dataHandler->setValue(valueIndex);
-		return true;
 	}
 };
 
