@@ -382,6 +382,9 @@ function Init() {
 		group2.addCheckBox('CheckBox 2', true);
 		group2.addRange('Range [0, 255]', 0, 255, 0).setValue(10);
 		group2.addRange('Range [-1, 1]', -1, 1, 0);
+		group2.addButton('Test button');
+		group2.addNumberFieldInt32('Number field 1', 42);
+		group2.addNumberFieldInt32('Number field 2', 42).setReadOnly(true);
 	}
 }
 

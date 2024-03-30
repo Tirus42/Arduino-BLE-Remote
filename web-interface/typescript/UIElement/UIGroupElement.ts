@@ -78,6 +78,12 @@ class UIGroupElement extends AUIElement {
 		return element;
 	}
 
+	addNumberFieldInt32(name: string, value: number) : UIInt32NumberFieldElement {
+		const element = new UIInt32NumberFieldElement(name, this, value);
+		this._addChildElement(element);
+		return element;
+	}
+
 	addGroup(name: string) : UIGroupElement {
 		const group = new UIGroupElement(name, this);
 		this._addChildElement(group);

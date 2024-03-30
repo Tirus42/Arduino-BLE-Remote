@@ -6,4 +6,5 @@ enum UIElementType {
 	CheckBoxSelector,
 	RangeSelector,
 	Button,
+	NumberFieldInt32,
 }

@@ -26,6 +26,10 @@ interface DropDownJSON extends NumberValueJSON {
 	items: string[];
 }
 
+interface NumberFieldJSON extends NumberValueJSON {
+	readOnly: boolean;
+}
+
 function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 	const jType = jsonNode.type.toLowerCase();
 	const jName = jsonNode.name;
@@ -83,6 +87,15 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 
 		case 'button': {
 			currentRoot.addButton(jName);
+			break;
+		}
+
+		case 'numberfield_int32': {
+			const numberFieldNode = <NumberFieldJSON>(jsonNode);
+			const jValue = numberFieldNode.value;
+			const jReadOnly = numberFieldNode.readOnly;
+
+			currentRoot.addNumberFieldInt32(jName, jValue).setReadOnly(jReadOnly);
 			break;
 		}
 

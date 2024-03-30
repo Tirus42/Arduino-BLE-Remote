@@ -161,14 +161,26 @@ struct AControlElement {
 		return "{\"type\":\""_s + type + "\",\"name\": \""_s + name + "\"";
 	}
 
+	std::string jsonField(const std::string& name, const std::string& value) const {
+		return "\""_s + name + "\":\""_s + value + "\""_s;
+	}
+
+	std::string jsonField(const std::string& name, int32_t value) const {
+		std::stringstream s;
+		s << value;
+		return jsonField(name, s.str());
+	}
+
+	std::string jsonField(const std::string& name, bool value) const {
+		return "\""_s + name + "\":"_s + (value ? "true" : "false");
+	}
+
 	std::string jsonValueField(const std::string& value) const {
-		return "\"value\":\""_s + value + "\""_s;
+		return jsonField("value", value);
 	}
 
 	std::string jsonValueField(int32_t value) const {
-		std::stringstream s;
-		s << "\"value\":" << value;
-		return s.str();
+		return jsonField("value", value);
 	}
 
 	std::string jsonValueField(bool value) const {
@@ -343,6 +355,31 @@ struct ButtonElement : public AControlElementWithParent {
 	}
 };
 
+struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32DataHandler> {
+	bool readOnly:1;
+
+	NumberFieldInt32Element(GroupElement* parent, const std::string& name, std::shared_ptr<IInt32DataHandler> dataHandler) :
+		AControlElementWithParentAndValue(parent, name, dataHandler),
+		readOnly(false) {}
+
+	GroupElement* endNumberField() {
+		return parent;
+	}
+
+	virtual std::string toJSON() const override {
+		return jsonPrefix("numberfield_int32") + ","_s + jsonValueField(dataHandler ? dataHandler->getValue() : 0) + "," + jsonField("readOnly", readOnly) + "}"_s;
+	}
+
+	virtual void setValue(const AValueWrapper& newValue) override {
+		dataHandler->setValue(newValue.getAsInt32());
+	}
+
+	virtual NumberFieldInt32Element* setReadOnly(bool readOnly = true) {
+		this->readOnly = readOnly;
+		return this;
+	}
+};
+
 struct GroupElement : public AControlElementWithParent {
 	std::vector<std::unique_ptr<AControlElement>> elements;
 
@@ -382,6 +419,10 @@ struct GroupElement : public AControlElementWithParent {
 
 	ButtonElement* addButton(std::string name, std::shared_ptr<ITriggerHandler> triggerHandler) {
 		return _addElement(std::make_unique<ButtonElement>(this, name, triggerHandler));
+	}
+
+	NumberFieldInt32Element* addNumberFieldInt32(std::string name, std::shared_ptr<IInt32DataHandler> handler) {
+		return _addElement(std::make_unique<NumberFieldInt32Element>(this, name, handler));
 	}
 
 	virtual std::string toJSON() const override {

@@ -71,6 +71,13 @@ class HTML {
 		return elem;
 	}
 
+	static CreateNumberFieldElement(value: number) : HTMLInputElement {
+		const elem = document.createElement('input');
+		elem.type = 'number';
+		elem.value = '' + value;
+		return elem;
+	}
+
 	static CreateLabelElement(optValue: string | null) : HTMLLabelElement {
 		const elem = document.createElement('label');
 

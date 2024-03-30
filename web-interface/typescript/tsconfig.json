@@ -80,6 +80,7 @@
     "UIElement/UICheckBoxElement.ts",
     "UIElement/UIRangeElement.ts",
     "UIElement/UIButtonElement.ts",
+    "UIElement/UIInt32NumberFieldElement.ts",
 
     "GUIProtocol/GUIProtocol.ts",
     "GUIProtocol/DataBuilder.ts",
