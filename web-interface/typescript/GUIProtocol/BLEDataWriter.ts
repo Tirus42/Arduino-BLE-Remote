@@ -19,10 +19,12 @@ class PendingDataEntry {
 class BLEDataWriter {
 	characteristic: BluetoothRemoteGATTCharacteristic;
 	pendingData: PendingDataEntry[];
+	failedRepeatCount: number;
 
 	constructor(characteristic: BluetoothRemoteGATTCharacteristic) {
 		this.characteristic = characteristic;
 		this.pendingData = [];
+		this.failedRepeatCount = 0;
 	}
 
 	sendData(groupName: string, data: Uint8Array) {
@@ -60,6 +62,14 @@ class BLEDataWriter {
 				// This is a workaround for android, because most times the first request failes with a "unknown reason"
 				// Also see https://github.com/LedgerHQ/ledgerjs/issues/352
 				Log('BLE send operation failed, repeating ...');
+
+				obj.failedRepeatCount++;
+
+				if (obj.failedRepeatCount > 10) {
+					Log('Aborting repeat operation due to 10 failed retries ...');
+					return;
+				}
+
 				reqSendFunction(characteristic, data);
 			});
 		}
