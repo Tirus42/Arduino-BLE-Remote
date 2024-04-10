@@ -10,9 +10,9 @@ class RGBColor {
 	}
 
 	toHexColor() : string {
-		return '#' + this.r.toString(16).padStart(2, '0')
-				   + this.g.toString(16).padStart(2, '0')
-				   + this.b.toString(16).padStart(2, '0');
+		return '#'	+ this.r.toString(16).padStart(2, '0')
+					+ this.g.toString(16).padStart(2, '0')
+					+ this.b.toString(16).padStart(2, '0');
 	}
 }
 
@@ -36,9 +36,9 @@ class RGBWColor extends RGBColor {
 }
 
 function ExtractRGB(color: string): RGBColor {
-    const r = parseInt(color.substr(1,2), 16)
-    const g = parseInt(color.substr(3,2), 16)
-    const b = parseInt(color.substr(5,2), 16)
+	const r = parseInt(color.substr(1,2), 16)
+	const g = parseInt(color.substr(3,2), 16)
+	const b = parseInt(color.substr(5,2), 16)
 
 	return new RGBColor(r, g, b);
 }

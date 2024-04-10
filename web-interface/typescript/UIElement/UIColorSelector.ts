@@ -81,12 +81,12 @@ class UIColorSelector extends AUIElement {
 
 	setValue(newColor: RGBWColor) {
 		// Set color picker
-		this.colorPicker.value = newColor.toHexColor()
+		this.colorPicker.value = newColor.toHexColor();
 
 		this.sliderR.slider.value = '' + newColor.r;
 		this.sliderG.slider.value = '' + newColor.g;
 		this.sliderB.slider.value = '' + newColor.b;
-		this.sliderW.slider.value = '' + newColor.w
+		this.sliderW.slider.value = '' + newColor.w;
 	}
 
 	getValue() : RGBWColor {
