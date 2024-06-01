@@ -441,7 +441,7 @@ struct TextFieldElement : public AControlElementWithParentAndValue<IStringDataHa
 
 	virtual std::string toJSON() const override {
 		std::string value = (config_sendValueToClient && dataHandler) ? dataHandler->getValue() : "";
-		return jsonPrefix(getElementTypeName()) + ","_s + jsonField("maxLength", maxLength) + ","_s + jsonValueField(value) + "}"_s;
+		return jsonPrefix(getElementTypeName()) + ","_s + jsonField("maxLength", int32_t(maxLength)) + ","_s + jsonValueField(value) + "}"_s;
 	}
 
 	virtual void setValue(const AValueWrapper& newValue) override {
