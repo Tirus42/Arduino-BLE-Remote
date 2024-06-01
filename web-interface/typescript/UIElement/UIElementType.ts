@@ -7,4 +7,6 @@ enum UIElementType {
 	RangeSelector,
 	Button,
 	NumberFieldInt32,
+	TextField,
+	PasswordField,
 }

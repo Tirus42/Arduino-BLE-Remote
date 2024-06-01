@@ -368,6 +368,26 @@ void BLELedController::handleGUISetValueRequest(uint32_t requestId, const std::v
 			writeGUIUpdateValue(*internal->guiCharacteristic, requestId, name, webgui::BooleanValueWrapper(value));
 			break;
 		}
+		case ValueType::String: {
+			if (content.size() < offset + 5) {
+				return;
+			}
+
+			uint32_t strLength = ntohl(PeekUInt32(content.data() + offset + 1));
+			offset += 5;
+
+			if (content.size() < offset + strLength) {
+				Serial.printf("Ignore string value, as the content is too small, data length: %u bytes, string length: %u bytes\n", content.size(), strLength);
+				return;
+			}
+
+			std::string value = {reinterpret_cast<const char*>(content.data() + offset), reinterpret_cast<const char*>(content.data() + offset + strLength)};
+			internal->guiData->setValue(path, webgui::StringValueWrapper(value));
+			// TODO: Dont broadcast password fields
+			writeGUIUpdateValue(*internal->guiCharacteristic, requestId, name, webgui::StringValueWrapper(value));
+			break;
+		}
+
 		default:
 			Serial.printf("Unhandled value data type: %u\n", type);
 			return;

@@ -43,6 +43,10 @@ struct FunctionTrigger : public ITriggerHandler {
 	FunctionTrigger(const std::function<void()>& triggerFunction) :
 		triggerFunction(triggerFunction) {}
 
+	static std::shared_ptr<ITriggerHandler> Create(const std::function<void()>& triggerFunction) {
+		return std::make_shared<FunctionTrigger>(triggerFunction);
+	}
+
 	virtual void onTrigger() override {
 		triggerFunction();
 	}
@@ -141,6 +145,25 @@ struct StringValueWrapper : public AValueWrapper {
 	}
 };
 
+template <typename ValueType>
+inline std::unique_ptr<AValueWrapper> WrapValue(const ValueType& value) {
+	if constexpr(std::is_same<ValueType, int32_t>::value) {
+		return std::make_unique<Int32ValueWrapper>(value);
+	}
+	else if constexpr(std::is_same<ValueType, uint16_t>::value) {
+		return std::make_unique<Int32ValueWrapper>(value);
+	}
+	else if constexpr(std::is_same<ValueType, std::string>::value) {
+		return std::make_unique<StringValueWrapper>(value);
+	}
+	else if constexpr(std::is_same<ValueType, bool>::value) {
+		return std::make_unique<BooleanValueWrapper>(value);
+	}
+	else {
+		static_assert(sizeof(ValueType) != sizeof(ValueType), "Unhandled data type error");
+	}
+}
+
 struct GroupElement;
 
 struct AControlElement {
@@ -154,6 +177,8 @@ struct AControlElement {
 	virtual ~AControlElement() = default;
 
 	virtual std::string toJSON() const = 0;
+
+	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const = 0;
 
 	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) = 0;
 
@@ -197,6 +222,10 @@ struct AControlElementWithParent : public AControlElement {
 
 	AControlElementWithParent(const AControlElementWithParent&) = delete;
 	AControlElementWithParent& operator=(const AControlElementWithParent&) = delete;
+
+	bool isValidPath(const std::vector<std::string>& path) const {
+		return path.size() == 1 && path[0] == name;
+	}
 };
 
 template <typename ValueHandlerType>
@@ -207,10 +236,16 @@ struct AControlElementWithParentAndValue : public AControlElementWithParent {
 		AControlElementWithParent(parent, name),
 		dataHandler(dataHandler) {}
 
+	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const override {
+		if (!isValidPath(path) || !dataHandler)
+			return nullptr;
+
+		return WrapValue(dataHandler->getValue());
+	}
+
 	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
-		if (path.size() != 1 || path[0] != name || !dataHandler) {
+		if (!isValidPath(path) || !dataHandler)
 			return false;
-		}
 
 		setValue(newValue);
 		return true;
@@ -346,8 +381,15 @@ struct ButtonElement : public AControlElementWithParent {
 		return jsonPrefix("button") + "}"_s;
 	}
 
+	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const override {
+		if (!isValidPath(path))
+			return nullptr;
+
+		return std::make_unique<BooleanValueWrapper>(false);
+	}
+
 	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
-		if (path.size() != 1 || path[0] != name || !triggerHandler)
+		if (!isValidPath(path) || !triggerHandler)
 			return false;
 
 		triggerHandler->onTrigger();
@@ -377,6 +419,54 @@ struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32
 	virtual NumberFieldInt32Element* setReadOnly(bool readOnly = true) {
 		this->readOnly = readOnly;
 		return this;
+	}
+};
+
+struct TextFieldElement : public AControlElementWithParentAndValue<IStringDataHandler> {
+	uint16_t maxLength;
+	bool config_sendValueToClient:1;
+
+	TextFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IStringDataHandler> dataHandler, uint16_t maxLength) :
+		AControlElementWithParentAndValue(parent, name, dataHandler),
+		maxLength(maxLength),
+		config_sendValueToClient(true) {}
+
+	virtual const char* getElementTypeName() const {
+		return "textfield";
+	}
+
+	GroupElement* endTextField() {
+		return parent;
+	}
+
+	virtual std::string toJSON() const override {
+		std::string value = (config_sendValueToClient && dataHandler) ? dataHandler->getValue() : "";
+		return jsonPrefix(getElementTypeName()) + ","_s + jsonField("maxLength", maxLength) + ","_s + jsonValueField(value) + "}"_s;
+	}
+
+	virtual void setValue(const AValueWrapper& newValue) override {
+		dataHandler->setValue(newValue.getAsString());
+	}
+
+	TextFieldElement* setSendValueToClient(bool sendToClient) {
+		config_sendValueToClient = sendToClient;
+		return this;
+	}
+};
+
+struct PasswordFieldElement : public TextFieldElement {
+	PasswordFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IStringDataHandler> dataHandler, uint16_t maxLength) :
+		TextFieldElement(parent, name, dataHandler, maxLength) {
+
+		config_sendValueToClient = false;
+	}
+
+	virtual const char* getElementTypeName() const {
+		return "password";
+	}
+
+	GroupElement* endPasswordField() {
+		return parent;
 	}
 };
 
@@ -425,6 +515,14 @@ struct GroupElement : public AControlElementWithParent {
 		return _addElement(std::make_unique<NumberFieldInt32Element>(this, name, handler));
 	}
 
+	TextFieldElement* addTextField(std::string name, std::shared_ptr<IStringDataHandler> handler, uint16_t maxLength) {
+		return _addElement(std::make_unique<TextFieldElement>(this, name, handler, maxLength));
+	}
+
+	PasswordFieldElement* addPasswordField(std::string name, std::shared_ptr<IStringDataHandler> handler, uint16_t maxLength) {
+		return _addElement(std::make_unique<PasswordFieldElement>(this, name, handler, maxLength));
+	}
+
 	virtual std::string toJSON() const override {
 		std::stringstream s;
 		s << jsonPrefix("group");
@@ -445,10 +543,22 @@ struct GroupElement : public AControlElementWithParent {
 		return s.str();
 	}
 
-	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
-		if (path.size() < 2 || path[0] != name) {
-			return false;
+	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const override {
+		if (path.size() < 2 || path[0] != name)
+			return nullptr;
+
+		for (auto& element : elements) {
+			if (element->name == path[1]) {
+				return element->getValue({path.begin() + 1, path.end()});
+			}
 		}
+
+		return nullptr;
+	}
+
+	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
+		if (path.size() < 2 || path[0] != name)
+			return false;
 
 		for (auto& element : elements) {
 			if (element->name == path[1]) {

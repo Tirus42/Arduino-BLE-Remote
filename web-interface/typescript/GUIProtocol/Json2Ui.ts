@@ -30,6 +30,11 @@ interface NumberFieldJSON extends NumberValueJSON {
 	readOnly: boolean;
 }
 
+interface TextFieldJSON extends ADataJSON {
+	value: string;
+	maxLength: number;
+}
+
 function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 	const jType = jsonNode.type.toLowerCase();
 	const jName = jsonNode.name;
@@ -96,6 +101,24 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const jReadOnly = numberFieldNode.readOnly;
 
 			currentRoot.addNumberFieldInt32(jName, jValue).setReadOnly(jReadOnly);
+			break;
+		}
+
+		case 'textfield': {
+			const textFieldNode = <TextFieldJSON>(jsonNode);
+			const jValue = textFieldNode.value;
+			const jMaxLength = textFieldNode.maxLength;
+
+			currentRoot.addTextField(jName, jValue, jMaxLength);
+			break;
+		}
+
+		case 'password': {
+			const textFieldNode = <TextFieldJSON>(jsonNode);
+			const jValue = textFieldNode.value;
+			const jMaxLength = textFieldNode.maxLength;
+
+			currentRoot.addPasswordField(jName, jValue, jMaxLength);
 			break;
 		}
 

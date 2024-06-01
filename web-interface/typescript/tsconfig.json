@@ -81,6 +81,9 @@
     "UIElement/UIRangeElement.ts",
     "UIElement/UIButtonElement.ts",
     "UIElement/UIInt32NumberFieldElement.ts",
+    "UIElement/AUITextFieldElement.ts",
+    "UIElement/UITextFieldElement.ts",
+    "UIElement/UIPasswordFieldElement.ts",
 
     "GUIProtocol/GUIProtocol.ts",
     "GUIProtocol/DataBuilder.ts",

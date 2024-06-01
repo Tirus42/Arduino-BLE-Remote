@@ -78,6 +78,20 @@ class HTML {
 		return elem;
 	}
 
+	static CreateTextFieldElement(value: string) : HTMLInputElement {
+		const elem = document.createElement('input');
+		elem.type = 'text';
+		elem.value = value;
+		return elem;
+	}
+
+	static CreatePasswordFieldElement(value: string) : HTMLInputElement {
+		const elem = document.createElement('input');
+		elem.type = 'password';
+		elem.value = value;
+		return elem;
+	}
+
 	static CreateLabelElement(optValue: string | null) : HTMLLabelElement {
 		const elem = document.createElement('label');
 

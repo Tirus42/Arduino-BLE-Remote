@@ -84,6 +84,18 @@ class UIGroupElement extends AUIElement {
 		return element;
 	}
 
+	addTextField(name: string, value: string, maxLength: number) : UITextFieldElement {
+		const element = new UITextFieldElement(name, this, value, maxLength);
+		this._addChildElement(element);
+		return element;
+	}
+
+	addPasswordField(name: string, value: string, maxLength: number) : UIPasswordFieldElement {
+		const element = new UIPasswordFieldElement(name, this, value, maxLength);
+		this._addChildElement(element);
+		return element;
+	}
+
 	addGroup(name: string) : UIGroupElement {
 		const group = new UIGroupElement(name, this);
 		this._addChildElement(group);
