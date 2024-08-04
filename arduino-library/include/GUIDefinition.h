@@ -3,6 +3,7 @@
 #include <memory>
 #include <sstream>
 #include <algorithm>
+#include <functional>
 
 namespace webgui {
 
