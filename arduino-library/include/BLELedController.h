@@ -28,6 +28,8 @@ class BLELedController {
 		std::map<UUID, LedMappingData> uuidToCharacteristicMap;
 		std::unique_ptr<InternalData> internal;
 
+		Print* errorLogTarget;
+
 		void onCharacteristicWritten(NimBLECharacteristic* pCharacteristic);
 
 		void handleLedInfoRequest(NimBLECharacteristic& characteristic);
@@ -62,6 +64,9 @@ class BLELedController {
 		*/
 		BLELedController(const char* deviceName, const char* modelName = nullptr, uint8_t clientLimit = 1);
 		~BLELedController();
+
+		/// Set or remove error logging target.
+		void setErrorLogTarget(Print* errorTarget);
 
 		void begin();
 

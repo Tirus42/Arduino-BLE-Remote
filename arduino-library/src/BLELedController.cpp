@@ -7,6 +7,7 @@
 #include "GUIProtocol.h"
 
 #include <string.h>	// For memcpy()
+#include <optional>
 
 static BLELedController* instance = nullptr;
 
@@ -111,6 +112,42 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 		}
 	}
 
+	/**
+	 * Returns the smallest MTU of all connected clients.
+	 */
+	std::optional<uint16_t> getClientsMtu() const {
+		if (pServer->getConnectedCount() == 0) {
+			return {};
+		}
+
+		uint16_t maxMtu = std::numeric_limits<uint16_t>::max();
+
+		for (size_t i = 0; i < pServer->getConnectedCount(); ++i) {
+			uint16_t clientMtu = pServer->getPeerMTU(i);
+
+			maxMtu = std::min(maxMtu, clientMtu);
+		}
+
+		return {maxMtu};
+	}
+
+	/**
+	 * Returns the maximum amount of bytes that can be written into a characteristic
+	 * that all conneted clients can handle.
+	 */
+	std::optional<uint16_t> getClientsContentMtu() const {
+		std::optional<uint16_t> clientsMtu = getClientsMtu();
+
+		if (!clientsMtu)
+			return clientsMtu;
+
+		if (*clientsMtu > 3) {
+			return {*clientsMtu - 3};
+		}
+
+		return {};
+	}
+
 	virtual void onConnect(BLEServer* _server, ble_gap_conn_desc* param) override {
 		clientLimit--;
 
@@ -132,7 +169,8 @@ BLELedController::BLELedController(const char* deviceName, const char* modelName
 	onConnectCallback(),
 	onDisconnectCallback(),
 	uuidToCharacteristicMap(),
-	internal() {
+	internal(),
+	errorLogTarget(nullptr) {
 
 	if (clientLimit == 0) {
 		clientLimit = 1;
@@ -159,6 +197,10 @@ BLELedController::~BLELedController() {
 
 	// Unset global instance
 	instance = nullptr;
+}
+
+void BLELedController::setErrorLogTarget(Print* errorTarget) {
+	this->errorLogTarget = errorTarget;
 }
 
 void BLELedController::begin() {
@@ -389,7 +431,7 @@ void BLELedController::handleGUISetValueRequest(uint32_t requestId, const std::v
 		}
 
 		default:
-			Serial.printf("Unhandled value data type: %u\n", type);
+			Serial.printf("Unhandled value data type: %u\n", uint32_t(type));
 			return;
 	}
 }
@@ -429,7 +471,7 @@ void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic,
 	for (size_t i = 0; i < path.size(); ++i) {
 		concat += path[i];
 
-		if (i +1 < path.size()) {
+		if (i + 1 < path.size()) {
 			concat += ',';
 		}
 	}
@@ -471,8 +513,21 @@ void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic,
 }
 
 void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, size_t length) const {
-    std::array<uint8_t, 128> sendBuffer;
-    static_assert(sendBuffer.size() >= 9);
+	std::optional<uint16_t> clientMtu = internal->getClientsContentMtu();
+
+	if (!clientMtu) {
+		// No clients connected? Ignore write request.
+		return;
+	}
+
+	if (*clientMtu < 10) {
+		if (errorLogTarget) {
+			errorLogTarget->printf("Cannot send data, need at least 10 bytes MTU but reported client MTU is %u\n", *clientMtu);
+		}
+		return;
+	}
+
+	std::vector<uint8_t> sendBuffer(*clientMtu);
 
     sendBuffer[0] = headByte;
 	PokeUInt32(sendBuffer.data() + 1, htonl(requestId));
