@@ -125,6 +125,17 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 		for (size_t i = 0; i < pServer->getConnectedCount(); ++i) {
 			uint16_t clientMtu = pServer->getPeerMTU(i);
 
+			printf("Client %u has a MTU of %u\n", i, clientMtu);
+
+			if (clientMtu == 0) {
+				// Override seems defect, override it ...
+				clientMtu = 128;
+
+				//if (errorLogTarget) {
+				//	errorLogTarget->printf("MTU of client %u reported as 0, overridden to 128\n", *clientMtu);
+				//}
+			}
+
 			maxMtu = std::min(maxMtu, clientMtu);
 		}
 
