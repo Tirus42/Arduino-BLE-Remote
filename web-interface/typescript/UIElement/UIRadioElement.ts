@@ -21,6 +21,9 @@ class UIRadioElement extends AUISelectorElement {
 			const label = HTML.CreateLabelElement('&nbsp;' + entry);
 			const option = HTML.CreateRadioElement(name, entry);
 
+			// Set unique name for own radio group
+			option.name = this.getAbsoluteName().toString();
+
 			option.oninput = () => {
 				this.onInputValueChange();
 			}
