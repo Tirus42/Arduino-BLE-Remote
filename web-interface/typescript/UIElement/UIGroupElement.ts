@@ -1,6 +1,11 @@
+const BTN_TEXT_HIDE = 'Λ';
+const BTN_TEXT_SHOW = 'V'
+
 class UIGroupElement extends AUIElement {
 	container: HTMLDivElement;
 	headerDiv : HTMLDivElement;
+	contentDiv : HTMLDivElement;
+	btnToggle : HTMLButtonElement;
 	elements: AUIElement[];
 
 	constructor(name: string, parent: UIGroupElement | null) {
@@ -8,15 +13,22 @@ class UIGroupElement extends AUIElement {
 
 		this.container = HTML.CreateDivElement('bevel');
 		this.headerDiv = HTML.CreateDivElement('span');
+		this.contentDiv = HTML.CreateDivElement();
 		this.elements = []
 
 		{
 			this.addToGroupHeader(HTML.CreateSpanElement(this.name));
+			this.btnToggle = this.addToGroupHeader(HTML.CreateButtonElement(BTN_TEXT_HIDE));
 			this.container.appendChild(this.headerDiv);
+
+			this.btnToggle.onclick = () => {
+				this.toggleContentVisibility();
+			};
 		}
 
 		let parentHTMLElement = parent ? parent.container : document.body;
 		parentHTMLElement.appendChild(this.container);
+		this.container.appendChild(this.contentDiv);
 	}
 
 	override destroy() {
@@ -104,11 +116,28 @@ class UIGroupElement extends AUIElement {
 
 	private _addChildElement(newElement: AUIElement) {
 		this.elements.push(newElement);
-		this.container.appendChild(newElement.getDomRootElement());
+		this.contentDiv.appendChild(newElement.getDomRootElement());
 	}
 
-	addToGroupHeader(htmlElement: HTMLElement) {
+	private toggleContentVisibility() {
+		const contentDiv = this.contentDiv;
+
+		if (contentDiv.style.visibility === '') {
+			contentDiv.style.visibility = 'hidden';
+			contentDiv.style.height = '0px';
+
+			this.btnToggle.innerText = BTN_TEXT_SHOW;
+		} else {
+			contentDiv.style.visibility = '';
+			contentDiv.style.height = '';
+
+			this.btnToggle.innerText = BTN_TEXT_HIDE;
+		}
+	}
+
+	addToGroupHeader<Type extends HTMLElement>(htmlElement: Type) : Type {
 		this.headerDiv.appendChild(htmlElement);
+		return htmlElement;
 	}
 
 	getDivContainer() : HTMLDivElement {
