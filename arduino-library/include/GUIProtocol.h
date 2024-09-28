@@ -16,6 +16,7 @@ enum class GUIServerHeader : uint8_t {
 	UpdateValue = 0x01,
 };
 
+static constexpr uint32_t BROADCAST_REQUEST_ID = 0xFFFFFFFF;
 
 template <class T>
 inline T PeekData(const void* ptr) {

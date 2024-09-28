@@ -257,6 +257,19 @@ void BLELedController::setGUI(std::shared_ptr<webgui::RootElement> guiData) {
 	internal->addGUICharacteristicOnDemand();
 }
 
+bool BLELedController::notifyGUIValueChange(const std::vector<std::string>& path) {
+	if (!internal->guiData)
+		return false;
+
+	std::unique_ptr<webgui::AValueWrapper> currentValue = internal->guiData->getValue(path);
+
+	if (!currentValue)
+		return false;
+
+	writeGUIUpdateValue(*internal->guiCharacteristic, BROADCAST_REQUEST_ID, path, *currentValue);
+	return true;
+}
+
 void BLELedController::setOnConnectCallback(std::function<void(const char*)> onConnectCallback) {
 	this->onConnectCallback = onConnectCallback;
 }

@@ -81,6 +81,12 @@ class BLELedController {
 
 		void setGUI(std::shared_ptr<webgui::RootElement> guiData);
 
+		/**
+		 * Sends a GUI value update to all connected clients with the current value of the field.
+		 * \returns true on success, false when the path was not valid.
+		 */
+		bool notifyGUIValueChange(const std::vector<std::string>& path);
+
 		[[deprecated("Not required anymore, will be removed in a future version.")]]
 		void update();
 
