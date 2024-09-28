@@ -5,6 +5,7 @@ interface ADataJSON {
 
 interface GroupDataJSON extends ADataJSON {
 	elements : ADataJSON[];
+	collapsed : undefined | boolean;
 }
 
 interface NumberValueJSON extends ADataJSON {
@@ -44,6 +45,11 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const groupNode = <GroupDataJSON>(jsonNode);
 
 			const elem = currentRoot.addGroup(jName);
+
+			if (groupNode.collapsed !== undefined) {
+				elem.setCollapsable(true);
+				elem.setCollapsed(groupNode.collapsed);
+			}
 
 			for (let i = 0; i < groupNode.elements.length; ++i) {
 				const entry = groupNode.elements[i];

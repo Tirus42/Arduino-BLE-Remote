@@ -4,6 +4,7 @@
 #include <sstream>
 #include <algorithm>
 #include <functional>
+#include <optional>
 
 namespace webgui {
 
@@ -473,6 +474,8 @@ struct PasswordFieldElement : public TextFieldElement {
 
 struct GroupElement : public AControlElementWithParent {
 	std::vector<std::unique_ptr<AControlElement>> elements;
+	// Controls collapsable + collapsed, not set -> not collapsable.
+	std::optional<bool> collapsed;
 
 	GroupElement(GroupElement* parent, std::string name) :
 		AControlElementWithParent(parent, name),
@@ -480,6 +483,22 @@ struct GroupElement : public AControlElementWithParent {
 
 	GroupElement* endGroup() {
 		return parent;
+	}
+
+	/**
+	 * Enables the collapsed feature + set the collapsed state.
+	 */
+	GroupElement* setCollapsed(bool collapsed = true) {
+		this->collapsed = collapsed;
+		return this;
+	}
+
+	/**
+	 * Enables or disables the collapsed feature.
+	 */
+	GroupElement* setCollapsable(bool collapsable = true) {
+		this->collapsed = collapsable ? std::optional<bool>(false) : std::optional<bool>();
+		return this;
 	}
 
 	template <typename T>
@@ -527,6 +546,11 @@ struct GroupElement : public AControlElementWithParent {
 	virtual std::string toJSON() const override {
 		std::stringstream s;
 		s << jsonPrefix("group");
+
+		if (collapsed) {
+			s << "," << jsonField("collapsed", *collapsed);
+		}
+
 		s << ",\"elements\":[";
 
 		size_t i = 0;

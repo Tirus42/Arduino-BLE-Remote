@@ -5,7 +5,7 @@ class UIGroupElement extends AUIElement {
 	container: HTMLDivElement;
 	headerDiv : HTMLDivElement;
 	contentDiv : HTMLDivElement;
-	btnToggle : HTMLButtonElement;
+	btnCollapse : HTMLButtonElement;
 	elements: AUIElement[];
 
 	constructor(name: string, parent: UIGroupElement | null) {
@@ -18,12 +18,14 @@ class UIGroupElement extends AUIElement {
 
 		{
 			this.addToGroupHeader(HTML.CreateSpanElement(this.name));
-			this.btnToggle = this.addToGroupHeader(HTML.CreateButtonElement(BTN_TEXT_HIDE));
+			this.btnCollapse = this.addToGroupHeader(HTML.CreateButtonElement(BTN_TEXT_HIDE));
 			this.container.appendChild(this.headerDiv);
 
-			this.btnToggle.onclick = () => {
+			this.btnCollapse.onclick = () => {
 				this.toggleContentVisibility();
 			};
+
+			this.setCollapsable(false);
 		}
 
 		let parentHTMLElement = parent ? parent.container : document.body;
@@ -119,20 +121,39 @@ class UIGroupElement extends AUIElement {
 		this.contentDiv.appendChild(newElement.getDomRootElement());
 	}
 
-	private toggleContentVisibility() {
+	setCollapsable(collapsable: boolean) {
+		if (collapsable) {
+			this.btnCollapse.style.visibility = '';
+			this.btnCollapse.style.width = '';
+		} else {
+			this.btnCollapse.style.visibility = 'hidden';
+			this.btnCollapse.style.width = '0px';
+			this.setCollapsed(false);
+		}
+	}
+
+	setCollapsed(collapsed: boolean) {
 		const contentDiv = this.contentDiv;
 
-		if (contentDiv.style.visibility === '') {
+		if (collapsed) {
 			contentDiv.style.visibility = 'hidden';
 			contentDiv.style.height = '0px';
 
-			this.btnToggle.innerText = BTN_TEXT_SHOW;
+			this.btnCollapse.innerText = BTN_TEXT_SHOW;
 		} else {
 			contentDiv.style.visibility = '';
 			contentDiv.style.height = '';
 
-			this.btnToggle.innerText = BTN_TEXT_HIDE;
+			this.btnCollapse.innerText = BTN_TEXT_HIDE;
 		}
+	}
+
+	isCollapsed() : boolean {
+		return this.contentDiv.style.visibility !== '';
+	}
+
+	private toggleContentVisibility() {
+		this.setCollapsed(!this.isCollapsed());
 	}
 
 	addToGroupHeader<Type extends HTMLElement>(htmlElement: Type) : Type {
