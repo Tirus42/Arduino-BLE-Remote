@@ -295,23 +295,23 @@ void BLELedController::setOnDisconnectCallback(std::function<void(const char*)> 
 }
 
 size_t BLELedController::getConnectedCount() const {
-    return internal->pServer->getConnectedCount();
+	return internal->pServer->getConnectedCount();
 }
 
 UUID BLELedController::GenerateUUIDByName(const std::string& name) {
-    mbedtls_md5_context ctx;
+	mbedtls_md5_context ctx;
 
-    mbedtls_md5_init(&ctx);
+	mbedtls_md5_init(&ctx);
 
-    mbedtls_md5_starts_ret(&ctx);
-    mbedtls_md5_update_ret(&ctx, reinterpret_cast<const uint8_t*>(name.c_str()), name.length());
+	mbedtls_md5_starts_ret(&ctx);
+	mbedtls_md5_update_ret(&ctx, reinterpret_cast<const uint8_t*>(name.c_str()), name.length());
 
-    UUID result;
+	UUID result;
 
-    mbedtls_md5_finish(&ctx, result.bytes.data());
-    mbedtls_md5_free(&ctx);
+	mbedtls_md5_finish(&ctx, result.bytes.data());
+	mbedtls_md5_free(&ctx);
 
-    return result;
+	return result;
 }
 
 /////////////////////
@@ -500,9 +500,9 @@ void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) con
 }
 
 void BLELedController::writeGUIInfoDataV1(NimBLECharacteristic& characteristic, uint32_t requestId) const {
-    std::string json = internal->guiData ? internal->guiData->toJSON() : "{}";
+	std::string json = internal->guiData ? internal->guiData->toJSON() : "{}";
 
-    writeCharacteristicData(characteristic, uint8_t(GUIServerHeader::GUIData), requestId, reinterpret_cast<const uint8_t*>(json.data()), json.size());
+	writeCharacteristicData(characteristic, uint8_t(GUIServerHeader::GUIData), requestId, reinterpret_cast<const uint8_t*>(json.data()), json.size());
 }
 
 void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic, uint32_t requestId, const std::vector<std::string>& path, const webgui::AValueWrapper& value) const {
@@ -574,21 +574,21 @@ void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteris
 
 	std::vector<uint8_t> sendBuffer(*clientMtu);
 
-    sendBuffer[0] = headByte;
+	sendBuffer[0] = headByte;
 	PokeUInt32(sendBuffer.data() + 1, htonl(requestId));
 	PokeUInt32(sendBuffer.data() + 5, htonl(length));
 
-    size_t offset = std::min(sendBuffer.size() - 9, length);
-    memcpy(sendBuffer.data() + 9, data, offset);
+	size_t offset = std::min(sendBuffer.size() - 9, length);
+	memcpy(sendBuffer.data() + 9, data, offset);
 
-    // Write first chunk
-    size_t firstChunkSize = 9 + offset;
+	// Write first chunk
+	size_t firstChunkSize = 9 + offset;
 
 	internal->guiDataSendQueue->append(sendBuffer.data(), firstChunkSize);
 
-    // Send remaining data
-    while (length > offset) {
-        size_t blockSize = std::min(length - offset, sendBuffer.size());
+	// Send remaining data
+	while (length > offset) {
+		size_t blockSize = std::min(length - offset, sendBuffer.size());
 
 		internal->guiDataSendQueue->append(data + offset, blockSize);
 		offset += blockSize;
