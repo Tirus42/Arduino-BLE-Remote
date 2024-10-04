@@ -6,6 +6,9 @@
 #include "GUIDefinition.h"
 #include "GUIProtocol.h"
 
+#include "AsyncBLECharacteristicWriter.h"
+#include "GUICharacteristicCallback.h"
+
 #include <string.h>	// For memcpy()
 #include <optional>
 
@@ -72,13 +75,18 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 	std::shared_ptr<webgui::RootElement> guiData;
 	uint8_t clientLimit;
 
+	std::unique_ptr<AsyncBLECharacteristicWriter> guiDataSendQueue;
+	std::unique_ptr<GUICharacteristicCallback> guiCallback;
+
 	InternalData(uint8_t clientLimit) :
 		pServer(BLEDevice::createServer()),
 		pService(pServer->createService(SERVICE_UUID)),
 		modelNameCharacteristic(pService->createCharacteristic(MODEL_NAME_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ)),
 		ledInfoCharacteristic(nullptr),
 		guiCharacteristic(nullptr),
-		clientLimit(clientLimit) {
+		clientLimit(clientLimit),
+		guiDataSendQueue(),
+		guiCallback() {
 
 		pServer->setCallbacks(this);
 	}
@@ -86,6 +94,12 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 	~InternalData() {
 		// We must remove the callback-ptr or the server will try to delete this
 		pServer->setCallbacks(nullptr);
+
+		if (guiCharacteristic) {
+			guiDataSendQueue.reset();
+			guiCallback.reset();
+			pService->removeCharacteristic(guiCharacteristic);
+		}
 
 		pServer->removeService(pService, true);
 	}
@@ -108,7 +122,9 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 	void addGUICharacteristicOnDemand() {
 		if (!guiCharacteristic) {
 			guiCharacteristic = pService->createCharacteristic(GUI_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
-			guiCharacteristic->setCallbacks(&callbackHandler);
+			guiDataSendQueue = std::make_unique<AsyncBLECharacteristicWriter>(guiCharacteristic);
+			guiCallback = std::make_unique<GUICharacteristicCallback>(*guiDataSendQueue);
+			guiCharacteristic->setCallbacks(guiCallback.get());
 		}
 	}
 
@@ -537,6 +553,11 @@ void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic,
 }
 
 void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, size_t length) const {
+	if (characteristic.getSubscribedCount() == 0) {
+		Serial.printf("No characteristic subscribers, ignoring\n");
+		return;
+	}
+
 	std::optional<uint16_t> clientMtu = internal->getClientsContentMtu();
 
 	if (!clientMtu) {
@@ -562,14 +583,15 @@ void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteris
 
     // Write first chunk
     size_t firstChunkSize = 9 + offset;
-    characteristic.notify(sendBuffer.data(), firstChunkSize);
+
+	internal->guiDataSendQueue->append(sendBuffer.data(), firstChunkSize);
 
     // Send remaining data
     while (length > offset) {
         size_t blockSize = std::min(length - offset, sendBuffer.size());
 
-        characteristic.notify(data + offset, blockSize);
-        offset += blockSize;
+		internal->guiDataSendQueue->append(data + offset, blockSize);
+		offset += blockSize;
     }
 }
 
@@ -604,4 +626,8 @@ RGBW BLELedController::ExtractRGBW(const BLECharacteristic& characteristic) {
 	RGBW newColor;
 	memcpy(&newColor, ptr, 4);
 	return newColor;
+}
+
+BLELedController* BLELedController::GetInstance() {
+	return instance;
 }

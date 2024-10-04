@@ -54,6 +54,10 @@ class BLELedController {
 
 		static RGBW ExtractRGBW(const NimBLECharacteristic& characteristic);
 
+		static BLELedController* GetInstance();
+
+		friend class GUICharacteristicCallback;
+
 	public:
 		/**
 		* Constructor.
