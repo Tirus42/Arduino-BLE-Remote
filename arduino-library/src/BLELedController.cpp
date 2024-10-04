@@ -5,11 +5,9 @@
 
 #include "Util.h"
 
-#include "GUIDefinition.h"
 #include "GUIProtocol.h"
 
-#include "AsyncBLECharacteristicWriter.h"
-#include "GUICharacteristicCallback.h"
+#include "gui/WebGUIHandler.h"
 
 #include <string.h>	// For memcpy()
 #include <optional>
@@ -73,22 +71,17 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 	BLEService* pService;
 	BLECharacteristic* modelNameCharacteristic;
 	BLECharacteristic* ledInfoCharacteristic;
-	BLECharacteristic* guiCharacteristic;
-	std::shared_ptr<webgui::RootElement> guiData;
-	uint8_t clientLimit;
+	std::unique_ptr<WebGUIHandler> optWebGUIHandler;
 
-	std::unique_ptr<AsyncBLECharacteristicWriter> guiDataSendQueue;
-	std::unique_ptr<GUICharacteristicCallback> guiCallback;
+	uint8_t clientLimit;
 
 	InternalData(uint8_t clientLimit) :
 		pServer(BLEDevice::createServer()),
 		pService(pServer->createService(SERVICE_UUID)),
 		modelNameCharacteristic(pService->createCharacteristic(MODEL_NAME_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ)),
 		ledInfoCharacteristic(nullptr),
-		guiCharacteristic(nullptr),
-		clientLimit(clientLimit),
-		guiDataSendQueue(),
-		guiCallback() {
+		optWebGUIHandler(),
+		clientLimit(clientLimit) {
 
 		pServer->setCallbacks(this);
 	}
@@ -97,10 +90,8 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 		// We must remove the callback-ptr or the server will try to delete this
 		pServer->setCallbacks(nullptr);
 
-		if (guiCharacteristic) {
-			guiDataSendQueue.reset();
-			guiCallback.reset();
-			pService->removeCharacteristic(guiCharacteristic);
+		if (optWebGUIHandler) {
+			optWebGUIHandler.reset();
 		}
 
 		pServer->removeService(pService, true);
@@ -121,12 +112,11 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 		}
 	}
 
-	void addGUICharacteristicOnDemand() {
-		if (!guiCharacteristic) {
-			guiCharacteristic = pService->createCharacteristic(GUI_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
-			guiDataSendQueue = std::make_unique<AsyncBLECharacteristicWriter>(guiCharacteristic);
-			guiCallback = std::make_unique<GUICharacteristicCallback>(*guiDataSendQueue);
-			guiCharacteristic->setCallbacks(guiCallback.get());
+	void setGUI(std::shared_ptr<webgui::RootElement> guiRoot) {
+		optWebGUIHandler.reset();
+
+		if (guiRoot) {
+			optWebGUIHandler = std::make_unique<WebGUIHandler>(guiRoot, pService);
 		}
 	}
 
@@ -232,6 +222,10 @@ void BLELedController::setErrorLogTarget(Print* errorTarget) {
 	this->errorLogTarget = errorTarget;
 }
 
+Print* BLELedController::getErrorLogTarget() const {
+	return this->errorLogTarget;
+}
+
 void BLELedController::begin() {
 	for (auto& iter : uuidToCharacteristicMap) {
 		iter.second.characteristic->setCallbacks(&callbackHandler);
@@ -269,23 +263,15 @@ void BLELedController::addRGBWCharacteristic(const std::string& name, std::funct
 	uuidToCharacteristicMap.insert({uuid, std::move(mapping)});
 }
 
-void BLELedController::setGUI(std::shared_ptr<webgui::RootElement> guiData) {
-	internal->guiData = guiData;
-
-	internal->addGUICharacteristicOnDemand();
+void BLELedController::setGUI(std::shared_ptr<webgui::RootElement> guiRoot) {
+	internal->setGUI(guiRoot);
 }
 
 bool BLELedController::notifyGUIValueChange(const std::vector<std::string>& path) {
-	if (!internal->guiData)
+	if (!internal->optWebGUIHandler)
 		return false;
 
-	std::unique_ptr<webgui::AValueWrapper> currentValue = internal->guiData->getValue(path);
-
-	if (!currentValue)
-		return false;
-
-	writeGUIUpdateValue(*internal->guiCharacteristic, BROADCAST_REQUEST_ID, path, *currentValue);
-	return true;
+	return internal->optWebGUIHandler->notifyGUIValueChange(path);
 }
 
 void BLELedController::setOnConnectCallback(std::function<void(const char*)> onConnectCallback) {
@@ -298,6 +284,10 @@ void BLELedController::setOnDisconnectCallback(std::function<void(const char*)> 
 
 size_t BLELedController::getConnectedCount() const {
 	return internal->pServer->getConnectedCount();
+}
+
+std::optional<uint16_t> BLELedController::getClientsContentMtu() const {
+	return internal->getClientsContentMtu();
 }
 
 UUID BLELedController::GenerateUUIDByName(const std::string& name) {
@@ -330,8 +320,6 @@ void BLELedController::onCharacteristicWritten(BLECharacteristic* characteristic
 
 	} else if (internal->ledInfoCharacteristic && characteristic->getUUID().equals(internal->ledInfoCharacteristic->getUUID())) {
 		handleLedInfoRequest(*characteristic);
-	} else if (characteristic->getUUID().equals(internal->guiCharacteristic->getUUID())) {
-		handleGUIRequest(*characteristic);
 	} else {
 		Serial.printf("Unhandled characteristic with UUID: '%s'\n", characteristic->getUUID().toString().c_str());
 	}
@@ -348,109 +336,6 @@ void BLELedController::handleLedInfoRequest(BLECharacteristic& characteristic) {
 		} else {
 			Serial.printf("Unhandled led info request: '%s'\n", cmd.c_str());
 		}
-	}
-}
-
-void BLELedController::handleGUIRequest(BLECharacteristic& characteristic) {
-	if (characteristic.getDataLength() == 0)
-		return;
-
-	NimBLEAttValue value = characteristic.getValue();
-
-	uint8_t headByte = value[0];
-	uint32_t requestId = ntohl(PeekUInt32(value.begin() + 1));
-
-	if (headByte >= uint8_t(GUIClientHeader::COUNT))
-		return;
-
-	switch (GUIClientHeader(headByte)) {
-		case GUIClientHeader::RequestGUI: {
-			writeGUIInfoDataV1(characteristic, requestId);
-			break;
-		}
-		case GUIClientHeader::SetValue: {
-			std::vector<uint8_t> remainingData(value.begin() + 5, value.end());
-			handleGUISetValueRequest(requestId, remainingData);
-			break;
-		}
-		default: {
-			Serial.printf("Unhandled client request with head byte: %u\n", headByte);
-		}
-	}
-}
-
-void BLELedController::handleGUISetValueRequest(uint32_t requestId, const std::vector<uint8_t>& content) {
-	if (!internal->guiData) {
-		return;
-	}
-
-	if (content.size() < 4) {
-		return;
-	}
-
-	uint32_t keyLength = ntohl(PeekUInt32(content.data() + 0));
-
-	if (content.size() < 4 + keyLength) {
-		return;
-	}
-
-	std::string name = {reinterpret_cast<const char*>(content.data() + 4), reinterpret_cast<const char*>(content.data() + 4 + keyLength)};
-	std::vector<std::string> path = SplitString(name, ",");
-
-	size_t offset = 4 + keyLength;
-
-	if (content.size() < offset + 1) {
-		return;
-	}
-
-	using ValueType = webgui::ValueType;
-
-	ValueType type = static_cast<ValueType>(content[offset]);
-
-	switch (type) {
-		case ValueType::Number: {
-			if (content.size() < offset + 5) {
-				return;
-			}
-
-			uint32_t value = ntohl(PeekUInt32(content.data() + offset + 1));
-			internal->guiData->setValue(path, webgui::Int32ValueWrapper(value));
-			writeGUIUpdateValue(*internal->guiCharacteristic, requestId, name, webgui::Int32ValueWrapper(value));
-			break;
-		}
-		case ValueType::Boolean: {
-			if (content.size() < offset + 2) {
-				return;
-			}
-
-			bool value = PeekUInt8(content.data() + offset + 1);
-			internal->guiData->setValue(path, webgui::BooleanValueWrapper(value));
-			writeGUIUpdateValue(*internal->guiCharacteristic, requestId, name, webgui::BooleanValueWrapper(value));
-			break;
-		}
-		case ValueType::String: {
-			if (content.size() < offset + 5) {
-				return;
-			}
-
-			uint32_t strLength = ntohl(PeekUInt32(content.data() + offset + 1));
-			offset += 5;
-
-			if (content.size() < offset + strLength) {
-				Serial.printf("Ignore string value, as the content is too small, data length: %u bytes, string length: %u bytes\n", content.size(), strLength);
-				return;
-			}
-
-			std::string value = {reinterpret_cast<const char*>(content.data() + offset), reinterpret_cast<const char*>(content.data() + offset + strLength)};
-			internal->guiData->setValue(path, webgui::StringValueWrapper(value));
-			// TODO: Dont broadcast password fields
-			writeGUIUpdateValue(*internal->guiCharacteristic, requestId, name, webgui::StringValueWrapper(value));
-			break;
-		}
-
-		default:
-			Serial.printf("Unhandled value data type: %u\n", uint32_t(type));
-			return;
 	}
 }
 
@@ -475,95 +360,6 @@ void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) con
 
 		characteristic.notify(buffer, length);
 	}
-}
-
-void BLELedController::writeGUIInfoDataV1(NimBLECharacteristic& characteristic, uint32_t requestId) const {
-	std::string json = internal->guiData ? internal->guiData->toJSON() : "{}";
-
-	writeCharacteristicData(characteristic, uint8_t(GUIServerHeader::GUIData), requestId, reinterpret_cast<const uint8_t*>(json.data()), json.size());
-}
-
-void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic, uint32_t requestId, const std::vector<std::string>& path, const webgui::AValueWrapper& value) const {
-	std::string concat;
-
-	for (size_t i = 0; i < path.size(); ++i) {
-		concat += path[i];
-
-		if (i + 1 < path.size()) {
-			concat += ',';
-		}
-	}
-
-	writeGUIUpdateValue(characteristic, requestId, concat, value);
-}
-
-void BLELedController::writeGUIUpdateValue(NimBLECharacteristic& characteristic, uint32_t requestId, const std::string& name, const webgui::AValueWrapper& value) const {
-	std::vector<uint8_t> namePart = StringToLengthPrefixedVector(name);
-	std::vector<uint8_t> valuePart(1);
-
-	valuePart[0] = uint8_t(value.getType());
-
-	using ValueType = webgui::ValueType;
-
-	switch (value.getType()) {
-		case ValueType::Number: {
-			valuePart.resize(5);
-			PokeUInt32(valuePart.data() + 1, htonl(value.getAsInt32()));
-			break;
-		}
-		case ValueType::Boolean: {
-			valuePart.resize(2);
-			valuePart[1] = value.getAsBool();
-			break;
-		}
-	}
-
-	std::vector<uint8_t> content = MergeVectors(namePart, valuePart);
-
-	writeCharacteristicData(characteristic, uint8_t(GUIServerHeader::UpdateValue), requestId, content.data(), content.size());
-}
-
-void BLELedController::writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, size_t length) const {
-	if (characteristic.getSubscribedCount() == 0) {
-		Serial.printf("No characteristic subscribers, ignoring\n");
-		return;
-	}
-
-	std::optional<uint16_t> clientMtu = internal->getClientsContentMtu();
-
-	if (!clientMtu) {
-		// No clients connected? Ignore write request.
-		return;
-	}
-
-	if (*clientMtu < 10) {
-		if (errorLogTarget) {
-			errorLogTarget->printf("Cannot send data, need at least 10 bytes MTU but reported client MTU is %u\n", *clientMtu);
-		}
-		return;
-	}
-
-	std::vector<uint8_t> sendBuffer(*clientMtu);
-
-	sendBuffer[0] = headByte;
-	PokeUInt32(sendBuffer.data() + 1, htonl(requestId));
-	PokeUInt32(sendBuffer.data() + 5, htonl(length));
-
-	size_t offset = std::min(sendBuffer.size() - 9, length);
-	memcpy(sendBuffer.data() + 9, data, offset);
-
-	// Write first chunk
-	size_t firstChunkSize = 9 + offset;
-
-	internal->guiDataSendQueue->append(sendBuffer.data(), firstChunkSize);
-
-	// Send remaining data
-	while (length > offset) {
-		size_t blockSize = std::min(length - offset, sendBuffer.size());
-
-		internal->guiDataSendQueue->append(data + offset, blockSize);
-		offset += blockSize;
-    }
 }
 
 void BLELedController::OnCharacteristicWritten(BLECharacteristic* characteristic) {

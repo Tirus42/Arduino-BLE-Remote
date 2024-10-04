@@ -35,19 +35,6 @@ class BLELedController {
 		void handleLedInfoRequest(NimBLECharacteristic& characteristic);
 		void writeLedInfoDataV1(NimBLECharacteristic& characteristic) const;
 
-		void writeGUIInfoDataV1(NimBLECharacteristic& characteristic, uint32_t requestId) const;
-		void writeGUIUpdateValue(NimBLECharacteristic& characteristic, uint32_t requestId, const std::vector<std::string>& path, const webgui::AValueWrapper& value) const;
-		void writeGUIUpdateValue(NimBLECharacteristic& characteristic, uint32_t requestId, const std::string& name, const webgui::AValueWrapper& value) const;
-
-		void handleGUIRequest(NimBLECharacteristic& characteristic);
-		void handleGUISetValueRequest(uint32_t requestId, const std::vector<uint8_t>& content);
-
-		/**
-		 * Writes a block of data to the characteristic. When the data is longer then the transmission size, it will be split
-		 * into several parts. The receiver can handle this by the prefixed length information.
-		 */
-		void writeCharacteristicData(NimBLECharacteristic& characteristic, uint8_t headByte, uint32_t requestId, const uint8_t* data, size_t length) const;
-
 		static void OnCharacteristicWritten(NimBLECharacteristic* pCharacteristic);
 		static void OnConnect(const char* remoteAddr);
 		static void OnDisconnect(const char* remoteAddr);
@@ -56,7 +43,7 @@ class BLELedController {
 
 		static BLELedController* GetInstance();
 
-		friend class GUICharacteristicCallback;
+		friend class WebGUIHandler;
 
 	public:
 		/**
@@ -72,6 +59,8 @@ class BLELedController {
 		/// Set or remove error logging target.
 		void setErrorLogTarget(Print* errorTarget);
 
+		Print* getErrorLogTarget() const;
+
 		void begin();
 
 		/**
@@ -83,7 +72,7 @@ class BLELedController {
 		void setOnConnectCallback(std::function<void(const char*)> onConnectCallback);
 		void setOnDisconnectCallback(std::function<void(const char*)> onDisconnectCallback);
 
-		void setGUI(std::shared_ptr<webgui::RootElement> guiData);
+		void setGUI(std::shared_ptr<webgui::RootElement> guiRoot);
 
 		/**
 		 * Sends a GUI value update to all connected clients with the current value of the field.
@@ -96,6 +85,12 @@ class BLELedController {
 
 		/// \returns the amount of open connections
 		size_t getConnectedCount() const;
+
+		/**
+		 * Returns the maximum amount of bytes that can be written into a characteristic
+		 * that all conneted clients can handle.
+		 */
+		std::optional<uint16_t> getClientsContentMtu() const;
 
 		/**
 		* Generates a specific UUID out of a name.

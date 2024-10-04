@@ -44,4 +44,8 @@ class AsyncBLECharacteristicWriter final {
 		const BLECharacteristic* getCharacteristic() const {
 			return pCharacteristic;
 		}
+
+		BLECharacteristic* getCharacteristic() {
+			return pCharacteristic;
+		}
 };
