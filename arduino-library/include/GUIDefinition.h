@@ -544,8 +544,12 @@ struct GroupElement : public AControlElementWithParent {
 	}
 
 	virtual std::string toJSON() const override {
+		return _toJSON("group");
+	}
+
+	std::string _toJSON(const char* groupTypeName) const {
 		std::stringstream s;
-		s << jsonPrefix("group");
+		s << jsonPrefix(groupTypeName);
 
 		if (collapsed) {
 			s << "," << jsonField("collapsed", *collapsed);
@@ -585,9 +589,13 @@ struct GroupElement : public AControlElementWithParent {
 		if (path.size() < 2 || path[0] != name)
 			return false;
 
+		return _setValueInsideGroup({path.begin() + 1, path.end()}, newValue);
+	}
+
+	bool _setValueInsideGroup(const std::vector<std::string>& pathWithoutGroup, const AValueWrapper& newValue) {
 		for (auto& element : elements) {
-			if (element->name == path[1]) {
-				return element->setValue({path.begin() + 1, path.end()}, newValue);
+			if (element->name == pathWithoutGroup[0]) {
+				return element->setValue(pathWithoutGroup, newValue);
 			}
 		}
 
@@ -595,9 +603,25 @@ struct GroupElement : public AControlElementWithParent {
 	}
 };
 
+/**
+ * Root element of the GUI structure.
+ *
+ * This is a special subclass of the GroupElement without a name.
+ */
 struct RootElement : public GroupElement {
-	RootElement(std::string name) :
-		GroupElement(nullptr, name) {}
+	RootElement() :
+		GroupElement(nullptr, "") {}
+
+	virtual std::string toJSON() const override {
+		return GroupElement::_toJSON("root");
+	}
+
+	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
+		if (path.size() < 1)
+			return false;
+
+		return _setValueInsideGroup(path, newValue);
+	}
 };
 
 }

@@ -3,6 +3,10 @@ interface ADataJSON {
 	name: string;
 }
 
+interface RootDataJSON extends ADataJSON {
+	elements : ADataJSON[];
+}
+
 interface GroupDataJSON extends ADataJSON {
 	elements : ADataJSON[];
 	collapsed : undefined | boolean;
@@ -41,6 +45,17 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 	const jName = jsonNode.name;
 
 	switch (jType) {
+		case 'root': {
+			const rootNode = <RootDataJSON>(jsonNode);
+			// Note: Name is ignored here
+
+			rootNode.elements.forEach(entry => {
+				ProcessJSON(currentRoot, entry);
+			});
+
+			break;
+		}
+
 		case 'group': {
 			const groupNode = <GroupDataJSON>(jsonNode);
 
