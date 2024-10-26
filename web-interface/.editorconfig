@@ -1,2 +1,5 @@
 [*.ts]
 indent_style = tab
+
+[*.html]
+indent_style = tab
