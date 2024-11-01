@@ -36,7 +36,7 @@ class PacketBuilder {
 				const b = PacketBuilder.CreateUInt8(value.getRGBWValue().b);
 				const w = PacketBuilder.CreateUInt8(value.getRGBWValue().w);
 
-				return MergeUint8Arrays5(prefix, r, g, b, w);
+				return MergeUint8Arrays5(prefix, w, r, g, b);
 		}
 	}
 }

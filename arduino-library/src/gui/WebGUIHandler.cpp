@@ -145,6 +145,19 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 			writeGUIUpdateValue(requestId, name, webgui::StringValueWrapper(value));
 			break;
 		}
+		case ValueType::RGBWColor: {
+			if (content.size() < offset + 5) {
+				return;
+			}
+
+			uint8_t wrgbBytes[4];
+			memcpy(wrgbBytes, content.data() + offset + 1, 4);
+			RGBW color(wrgbBytes[1], wrgbBytes[2], wrgbBytes[3], wrgbBytes[0]);
+
+			guiRoot->setValue(path, webgui::RGBWValueWrapper(color));
+			writeGUIUpdateValue(requestId, name, webgui::RGBWValueWrapper(color));
+			break;
+		}
 
 		default:
 			Serial.printf("Unhandled value data type: %u\n", uint32_t(type));
@@ -189,6 +202,17 @@ void WebGUIHandler::writeGUIUpdateValue(uint32_t requestId, const std::string& n
 		case ValueType::Boolean: {
 			valuePart.resize(2);
 			valuePart[1] = value.getAsBool();
+			break;
+		}
+		case ValueType::RGBWColor: {
+			// Note: Here should dynamic_cast be used. But we compile with -fno-rtti
+			const webgui::RGBWValueWrapper& rgbwValue = static_cast<const webgui::RGBWValueWrapper&>(value);
+
+			valuePart.resize(5);
+			valuePart[1] = rgbwValue.value.w;
+			valuePart[2] = rgbwValue.value.r;
+			valuePart[3] = rgbwValue.value.g;
+			valuePart[4] = rgbwValue.value.b;
 			break;
 		}
 	}

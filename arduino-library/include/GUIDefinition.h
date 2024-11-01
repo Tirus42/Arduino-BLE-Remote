@@ -1,5 +1,7 @@
 #pragma once
 
+#include <RGBW.h>
+
 #include <memory>
 #include <sstream>
 #include <algorithm>
@@ -58,6 +60,7 @@ typedef IDataHandler<bool> IBoolDataHandler;
 typedef IDataHandler<int32_t> IInt32DataHandler;
 typedef IDataHandler<uint16_t> IUInt16DataHandler;
 typedef IDataHandler<std::string> IStringDataHandler;
+typedef IDataHandler<RGBW> IRGBWDataHandler;
 
 enum class ValueType : uint8_t {
 	Number = 0,
@@ -147,6 +150,31 @@ struct StringValueWrapper : public AValueWrapper {
 	}
 };
 
+struct RGBWValueWrapper : public AValueWrapper {
+	RGBW value;
+
+	RGBWValueWrapper(RGBW value) :
+		value(value) {}
+
+	virtual ValueType getType() const override {
+		return ValueType::RGBWColor;
+	}
+
+	virtual std::string getAsString() const override {
+		std::stringstream s;
+		s << "{" << value.r << "," << value.g << "," << value.b << "," << value.w << "}";
+		return s.str();
+	}
+
+	virtual int32_t getAsInt32() const override {
+		return value.getAsPackedColor();
+	}
+
+	virtual bool getAsBool() const override {
+		return value != COLOR_OFF;
+	}
+};
+
 template <typename ValueType>
 inline std::unique_ptr<AValueWrapper> WrapValue(const ValueType& value) {
 	if constexpr(std::is_same<ValueType, int32_t>::value) {
@@ -160,6 +188,9 @@ inline std::unique_ptr<AValueWrapper> WrapValue(const ValueType& value) {
 	}
 	else if constexpr(std::is_same<ValueType, bool>::value) {
 		return std::make_unique<BooleanValueWrapper>(value);
+	}
+	else if constexpr(std::is_same<ValueType, RGBW>::value) {
+		return std::make_unique<RGBWValueWrapper>(value);
 	}
 	else {
 		static_assert(sizeof(ValueType) != sizeof(ValueType), "Unhandled data type error");
@@ -188,14 +219,24 @@ struct AControlElement {
 		return "{\"type\":\""_s + type + "\",\"name\": \""_s + name + "\"";
 	}
 
-	std::string jsonField(const std::string& name, const std::string& value) const {
-		return "\""_s + name + "\":\""_s + value + "\""_s;
+	std::string jsonField(const std::string& name, const std::string& value, bool withQuotesForValue) const {
+		if (withQuotesForValue) {
+			return "\""_s + name + "\":\""_s + value + "\""_s;
+		}
+
+		return "\""_s + name + "\":"_s + value;
 	}
 
 	std::string jsonField(const std::string& name, int32_t value) const {
 		std::stringstream s;
 		s << value;
-		return jsonField(name, s.str());
+		return jsonField(name, s.str(), false);
+	}
+
+	std::string jsonField(const std::string& name, uint32_t value) const {
+		std::stringstream s;
+		s << value;
+		return jsonField(name, s.str(), false);
 	}
 
 	std::string jsonField(const std::string& name, bool value) const {
@@ -203,10 +244,14 @@ struct AControlElement {
 	}
 
 	std::string jsonValueField(const std::string& value) const {
-		return jsonField("value", value);
+		return jsonField("value", value, true);
 	}
 
 	std::string jsonValueField(int32_t value) const {
+		return jsonField("value", value);
+	}
+
+	std::string jsonValueField(uint32_t value) const {
 		return jsonField("value", value);
 	}
 
@@ -472,6 +517,42 @@ struct PasswordFieldElement : public TextFieldElement {
 	}
 };
 
+struct RGBWFieldElement : public AControlElementWithParentAndValue<IRGBWDataHandler> {
+	std::string channelString;
+
+	RGBWFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IRGBWDataHandler> dataHandler, const char* channelString = "RGBW") :
+		AControlElementWithParentAndValue<IRGBWDataHandler>(parent, name, dataHandler),
+		channelString(channelString) {}
+
+	virtual const char* getElementTypeName() const {
+		return "RGBWRange";
+	}
+
+	virtual std::string toJSON() const override {
+		std::stringstream s;
+
+		uint32_t rgbwPackedValue = dataHandler ? dataHandler->getValue().getAsPackedColor() : 0;
+
+		s << jsonPrefix("RGBWRange");
+		s << ",\"channel\":"_s;
+		s << "\"" << channelString << "\",";
+		s << jsonValueField(rgbwPackedValue);
+		s << "}"_s;
+
+		return s.str();
+	}
+
+	virtual void setValue(const AValueWrapper& newValue) override {
+		if (dataHandler) {
+			dataHandler->setValue(RGBW(newValue.getAsInt32()));
+		}
+	}
+
+	GroupElement* endRGBWField() {
+		return parent;
+	}
+};
+
 struct GroupElement : public AControlElementWithParent {
 	std::vector<std::unique_ptr<AControlElement>> elements;
 	// Controls collapsable + collapsed, not set -> not collapsable.
@@ -541,6 +622,10 @@ struct GroupElement : public AControlElementWithParent {
 
 	PasswordFieldElement* addPasswordField(std::string name, std::shared_ptr<IStringDataHandler> handler, uint16_t maxLength) {
 		return _addElement(std::make_unique<PasswordFieldElement>(this, name, handler, maxLength));
+	}
+
+	RGBWFieldElement* addRGBWRangeControl(std::string name, std::shared_ptr<IRGBWDataHandler> handler, const char* channelString = "RGBW") {
+		return _addElement(std::make_unique<RGBWFieldElement>(this, name, handler, channelString));
 	}
 
 	virtual std::string toJSON() const override {

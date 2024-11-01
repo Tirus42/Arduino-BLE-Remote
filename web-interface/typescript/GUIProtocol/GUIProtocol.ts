@@ -162,6 +162,11 @@ class GUIProtocolHandler {
 				const boolValue : boolean = reader.extractUint8() > 0;
 				return new ValueWrapper(boolValue);
 			}
+			case ValueType.RGBWColor: {
+				const packedValue : number = reader.extractUint32();
+				const rgbwValue : RGBWColor = ExtractPackedRGBW(packedValue);
+				return new ValueWrapper(rgbwValue);
+			}
 			default: {
 				throw "Received unhandled data type " + valueType + " via UpdateValue packet.";
 			}

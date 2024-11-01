@@ -40,6 +40,11 @@ interface TextFieldJSON extends ADataJSON {
 	maxLength: number;
 }
 
+interface RGBWRangeFieldJSON extends ADataJSON {
+	value: number;
+	channel: string;
+}
+
 function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 	const jType = jsonNode.type.toLowerCase();
 	const jName = jsonNode.name;
@@ -140,6 +145,20 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const jMaxLength = textFieldNode.maxLength;
 
 			currentRoot.addPasswordField(jName, jValue, jMaxLength);
+			break;
+		}
+
+		case 'rgbwrange': {
+			const rgbwFieldNode = <RGBWRangeFieldJSON>(jsonNode);
+			const jValue = rgbwFieldNode.value;
+			const channel = rgbwFieldNode.channel;
+
+			const colorChannels = ExtractColorChannels(channel);
+			const initialColor = ExtractPackedRGBW(jValue);
+
+			const elem = currentRoot.addRGBWColorPicker(jName, colorChannels);
+			elem.setValue(initialColor);
+
 			break;
 		}
 

@@ -43,6 +43,15 @@ function ExtractRGB(color: string): RGBColor {
 	return new RGBColor(r, g, b);
 }
 
+function ExtractPackedRGBW(color: number) : RGBWColor {
+	const w = (color & 0xFF000000) >> 24;
+	const r = (color & 0x00FF0000) >> 16;
+	const g = (color & 0x0000FF00) >> 8;
+	const b = (color & 0x000000FF);
+
+	return new RGBWColor(r, g, b, w);
+}
+
 class ColorChannels {
 	r: boolean;
 	g: boolean;
