@@ -701,6 +701,19 @@ struct RootElement : public GroupElement {
 		return GroupElement::_toJSON("root");
 	}
 
+	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const override {
+		if (path.size() < 1)
+			return nullptr;
+
+		for (auto& element : elements) {
+			if (element->name == path[0]) {
+				return element->getValue(path);
+			}
+		}
+
+		return nullptr;
+	}
+
 	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
 		if (path.size() < 1)
 			return false;
