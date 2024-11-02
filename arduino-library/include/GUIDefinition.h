@@ -62,6 +62,43 @@ typedef IDataHandler<uint16_t> IUInt16DataHandler;
 typedef IDataHandler<std::string> IStringDataHandler;
 typedef IDataHandler<RGBW> IRGBWDataHandler;
 
+/**
+ * Reference value handler.
+ * Implementation of the IDataHandler interface to read/write values directly via reference.
+ * Also supports an optional function callback to call when the value was updated.
+ *
+ * Note that this callback may be called from an event thread!
+ */
+template <typename T, typename RefType = T>
+struct RefValueHandler : public IDataHandler<T> {
+	RefType& refValue;
+	std::function<void()> optOnChangeFunction;
+
+	RefValueHandler(RefType& refValue, const std::function<void()>& optOnChangeFunction ) :
+		refValue(refValue),
+		optOnChangeFunction(optOnChangeFunction) {}
+
+	virtual T getValue() const override {
+		return T(refValue);
+	}
+
+	virtual void setValue(const T& newValue) override {
+		refValue = RefType(newValue);
+
+		if (optOnChangeFunction) {
+			optOnChangeFunction();
+		}
+	}
+
+	static std::shared_ptr<RefValueHandler<T, RefType>> Create(RefType& refValue, const std::function<void()>& onChangeFunction) {
+		return std::make_shared<RefValueHandler<T, RefType>>(refValue, onChangeFunction);
+	}
+};
+
+typedef RefValueHandler<bool> BoolRefValueHandler;
+typedef RefValueHandler<int32_t, uint32_t> UIntRefValueHandler;
+typedef RefValueHandler<RGBW> RGBWRefValueHandler;
+
 enum class ValueType : uint8_t {
 	Number = 0,
 	String = 1,
