@@ -5,10 +5,10 @@ class BLEDataReader {
 
 	constructor(expectedSize: number, firstBlock: Uint8Array, onCompleteFunction: (wholeBuffer: Uint8Array) => any) {
 		this.buffer = new Uint8Array(expectedSize);
-		this.offset = firstBlock.length;
+		this.offset = 0;
 		this.onCompleteFunction = onCompleteFunction;
 
-		MemCpy(this.buffer, 0, firstBlock, 0, firstBlock.length);
+		this.appendData(firstBlock);
 	}
 
 	appendData(data: Uint8Array) : boolean {
