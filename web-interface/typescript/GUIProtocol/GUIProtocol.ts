@@ -115,7 +115,7 @@ class GUIProtocolHandler {
 
 		const remainingContent = new Uint8Array(reader.extractRemainingData().buffer);
 
-		this.recvPendingData = new BLEDataReader(length, remainingContent, function(wholeBlock: Uint8Array) {
+		this.recvPendingData = new BLEDataReader(length, function(wholeBlock: Uint8Array) {
 			const jsonString = DecodeUTF8String(wholeBlock);
 			const object = <ADataJSON>JSON.parse(jsonString);
 
@@ -124,6 +124,12 @@ class GUIProtocolHandler {
 				ref.onGuiJsonCallback(object);
 			}
 		});
+
+		let completed = this.recvPendingData.appendData(remainingContent);
+
+		if (completed) {
+			this.recvPendingData = undefined;
+		}
 	}
 
 	private _handlePacket_UpdateValue(content: DataView) {
