@@ -276,6 +276,12 @@ struct AControlElement {
 		return jsonField(name, s.str(), false);
 	}
 
+	std::string jsonField(const std::string& name, float value) const {
+		std::stringstream s;
+		s << value;
+		return jsonField(name, s.str(), false);
+	}
+
 	std::string jsonField(const std::string& name, bool value) const {
 		return "\""_s + name + "\":"_s + (value ? "true" : "false");
 	}
@@ -590,6 +596,40 @@ struct RGBWFieldElement : public AControlElementWithParentAndValue<IRGBWDataHand
 	}
 };
 
+template <typename T>
+struct CompassElement : public AControlElementWithParentAndValue<IDataHandler<T>> {
+	typedef AControlElementWithParentAndValue<IDataHandler<T>> Base;
+	using Base::dataHandler;
+
+	CompassElement(GroupElement* parent, const std::string& name, std::shared_ptr<IDataHandler<T>> dataHandler) :
+		Base(parent, name, dataHandler) {}
+
+	virtual const char* getElementTypeName() const {
+		return "Compass";
+	}
+
+	virtual std::string toJSON() const override {
+		std::stringstream s;
+
+		T value = dataHandler ? dataHandler->getValue() : 0.f;
+
+		s << Base::jsonPrefix("Compass");
+		s << ","_s;
+		s << Base::jsonValueField(value);
+		s << "}"_s;
+
+		return s.str();
+	}
+
+	virtual void setValue(const AValueWrapper& /*newValue*/) override {
+		// Compass is just an output element
+	}
+
+	GroupElement* endCompass() {
+		return Base::parent;
+	}
+};
+
 struct GroupElement : public AControlElementWithParent {
 	std::vector<std::unique_ptr<AControlElement>> elements;
 	// Controls collapsable + collapsed, not set -> not collapsable.
@@ -663,6 +703,10 @@ struct GroupElement : public AControlElementWithParent {
 
 	RGBWFieldElement* addRGBWRangeControl(std::string name, std::shared_ptr<IRGBWDataHandler> handler, const char* channelString = "RGBW") {
 		return _addElement(std::make_unique<RGBWFieldElement>(this, name, handler, channelString));
+	}
+
+	CompassElement<int32_t>* addCompassi(std::string name, std::shared_ptr<IDataHandler<int32_t>> handler) {
+		return _addElement(std::make_unique<CompassElement<int32_t>>(this, name, handler));
 	}
 
 	virtual std::string toJSON() const override {

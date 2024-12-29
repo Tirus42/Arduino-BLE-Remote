@@ -45,6 +45,8 @@ interface RGBWRangeFieldJSON extends ADataJSON {
 	channel: string;
 }
 
+interface CompassFieldJSON extends NumberValueJSON {}
+
 function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 	const jType = jsonNode.type.toLowerCase();
 	const jName = jsonNode.name;
@@ -159,6 +161,14 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const elem = currentRoot.addRGBWColorPicker(jName, colorChannels);
 			elem.setValue(initialColor);
 
+			break;
+		}
+
+		case 'compass': {
+			const compassNode = <CompassFieldJSON>(jsonNode);
+			const azimuth = compassNode.value;
+
+			currentRoot.addCompass(jName, azimuth);
 			break;
 		}
 

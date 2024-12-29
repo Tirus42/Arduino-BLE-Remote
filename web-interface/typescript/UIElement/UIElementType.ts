@@ -9,4 +9,5 @@ enum UIElementType {
 	NumberFieldInt32,
 	TextField,
 	PasswordField,
+	Compass,
 }

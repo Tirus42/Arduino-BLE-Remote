@@ -110,6 +110,12 @@ class UIGroupElement extends AUIElement {
 		return element;
 	}
 
+	addCompass(name: string, azimuth: number) : UICompassElement {
+		const element = new UICompassElement(name, this, azimuth);
+		this._addChildElement(element);
+		return element;
+	}
+
 	addGroup(name: string) : UIGroupElement {
 		const group = new UIGroupElement(name, this);
 		this._addChildElement(group);

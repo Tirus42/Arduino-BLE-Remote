@@ -385,6 +385,7 @@ function Init() {
 		group2.addButton('Test button');
 		group2.addNumberFieldInt32('Number field 1', 42);
 		group2.addNumberFieldInt32('Number field 2', 42).setReadOnly(true);
+		group2.addCompass('Compass2', 45);
 	}
 }
 

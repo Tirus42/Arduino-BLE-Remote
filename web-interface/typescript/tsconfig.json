@@ -84,6 +84,7 @@
     "UIElement/AUITextFieldElement.ts",
     "UIElement/UITextFieldElement.ts",
     "UIElement/UIPasswordFieldElement.ts",
+    "UIElement/UICompassElement.ts",
 
     "GUIProtocol/GUIProtocol.ts",
     "GUIProtocol/DataBuilder.ts",

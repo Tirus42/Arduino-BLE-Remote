@@ -92,6 +92,53 @@ input.slider {
     display: none;
 }
 
+
+/* Compass related elements */
+
+.compass-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+}
+.compass-border {
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    border: 5px solid gray;
+    border-radius: 50%;
+    position: absolute;
+}
+.compass-needle {
+    width: 2px;
+    height: calc(50% - 5px);
+    background-color: red;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+}
+.compass-label {
+    position: absolute;
+    top: calc(50% + 5px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+}
+.compass-direction {
+    position: absolute;
+    font-size: 18px;
+}
+.compass-n { top: 5px; left: 50%; transform: translateX(-50%); }
+.compass-s { bottom: 5px; left: 50%; transform: translateX(-50%); }
+.compass-w { top: 50%; left: 5px; transform: translateY(-50%); }
+.compass-e { top: 50%; right: 5px; transform: translateY(-50%); }
+
+
+/* Media queries for dark mode users */
+
 @media (prefers-color-scheme: dark) {
     :root {
         background: #111;
