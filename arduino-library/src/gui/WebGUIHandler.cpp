@@ -204,6 +204,10 @@ void WebGUIHandler::writeGUIUpdateValue(uint32_t requestId, const std::string& n
 			valuePart[1] = value.getAsBool();
 			break;
 		}
+		case ValueType::String: {
+			valuePart = MergeVectors(valuePart, StringToLengthPrefixedVector(value.getAsString()));
+			break;
+		}
 		case ValueType::RGBWColor: {
 			// Note: Here should dynamic_cast be used. But we compile with -fno-rtti
 			const webgui::RGBWValueWrapper& rgbwValue = static_cast<const webgui::RGBWValueWrapper&>(value);

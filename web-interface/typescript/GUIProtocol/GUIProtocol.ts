@@ -168,6 +168,10 @@ class GUIProtocolHandler {
 				const boolValue : boolean = reader.extractUint8() > 0;
 				return new ValueWrapper(boolValue);
 			}
+			case ValueType.String: {
+				const stringValue : string = reader.extractString();
+				return new ValueWrapper(stringValue);
+			}
 			case ValueType.RGBWColor: {
 				const packedValue : number = reader.extractUint32();
 				const rgbwValue : RGBWColor = ExtractPackedRGBW(packedValue);

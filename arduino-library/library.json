@@ -1,6 +1,6 @@
 {
   "name": "BLE Remote",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "BLE peripheral implementation for remote control of custom defined values.",
   "keywords": "ble, remote, control, led",
   "repository":
@@ -21,6 +21,16 @@
     "h2zero/NimBLE-Arduino": "@^1.4.2",
     "tirus/LedControlAndAnimation": "^1.4.7",
     "tirus/UUID": "^1.0.1"
+  },
+  "build": {
+	"flags": [
+		"-std=c++2a",
+		"-Werror=switch",
+		"-Werror=format",
+		"-Werror=return-type",
+		"-Werror=init-self",
+		"-Werror=return-local-addr"
+	]
   },
   "frameworks": "arduino",
   "platforms": ["espressif32"]
