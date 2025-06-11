@@ -1,3 +1,7 @@
+/**
+ * RGB color representation.
+ * Stores component values in the range [0, 255] (8 bit per channel).
+ */
 class RGBColor {
 	r: number;
 	g: number;
@@ -13,6 +17,28 @@ class RGBColor {
 		return '#'	+ this.r.toString(16).padStart(2, '0')
 					+ this.g.toString(16).padStart(2, '0')
 					+ this.b.toString(16).padStart(2, '0');
+	}
+
+	getMaxComponentValue() : number {
+		return Math.max(this.r, this.g, this.b);
+	}
+
+	scale(factor : number) {
+		this.r *= factor;
+		this.g *= factor;
+		this.b *= factor;
+	}
+
+	scaleToMax() : RGBColor {
+		const maxValue = this.getMaxComponentValue();
+
+		if (maxValue !== 0) {
+			const scaleFactor = 255 / maxValue;
+
+			this.scale(scaleFactor);
+		}
+
+		return this;
 	}
 }
 
@@ -32,6 +58,22 @@ class RGBWColor extends RGBColor {
 		array[3] = this.w;
 
 		return array;
+	}
+
+	override getMaxComponentValue() : number {
+		return Math.max(this.r, this.g, this.b, this.w);
+	}
+
+	override scale(factor : number) {
+		this.r *= factor;
+		this.g *= factor;
+		this.b *= factor;
+		this.w *= factor;
+	}
+
+	override scaleToMax() : RGBWColor {
+		super.scaleToMax();
+		return this;
 	}
 }
 

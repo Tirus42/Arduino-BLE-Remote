@@ -1,6 +1,7 @@
 class UIColorSelector extends AUIElement {
 	container: HTMLDivElement;
 	colorPicker: HTMLInputElement;
+	btnScaleToMax: HTMLButtonElement;
 	sliderR: SliderElement;
 	sliderG: SliderElement;
 	sliderB: SliderElement;
@@ -12,6 +13,7 @@ class UIColorSelector extends AUIElement {
 		this.container = HTML.CreateDivElement('control-panel');
 
 		this.colorPicker = HTML.CreateColorPickerElement();
+		this.btnScaleToMax = HTML.CreateButtonElement('M');
 
 		this.colorPicker.oninput = (_: Event) => {
 			const htmlColor = this.colorPicker.value;
@@ -22,9 +24,15 @@ class UIColorSelector extends AUIElement {
 
 		this.colorPicker.dataset.name = name;
 
+		this.btnScaleToMax.onclick = () => {
+			this.scaleToMax();
+		}
+		this.btnScaleToMax.title = 'Scale to max brightness';
+
 		const colorPickerText = HTML.CreateSpanElement(' ' + name);
 
 		this.container.appendChild(this.colorPicker);
+		this.container.appendChild(this.btnScaleToMax);
 		this.container.appendChild(colorPickerText);
 		this.container.appendChild(HTML.CreateBrElement());
 
@@ -91,6 +99,11 @@ class UIColorSelector extends AUIElement {
 
 	getValue() : RGBWColor {
 		return this._getSliderColorValue();
+	}
+
+	scaleToMax() {
+		const newColor = this._getSliderColorValue().scaleToMax();
+		this.onColorChange(newColor);
 	}
 
 	override setPathValue(path: string[], newValue: ValueWrapper) {
