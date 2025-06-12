@@ -8,11 +8,11 @@ class SliderElement {
 	}
 }
 
-function CreateRangeSlider(id: string, title: string, onColorChangeFunction: () => any, containerClass: string | null = null) : SliderElement {
+function CreateRangeSlider(id: string, title: string, onColorChangeFunction: () => any, containerClass: string | null = null, minValue: number = 0, maxValue: number = 255) : SliderElement {
 	const element = document.createElement('input');
 	element.type = 'range';
-	element.min = '0';
-	element.max = '255';
+	element.min = '' + minValue;
+	element.max = '' + maxValue;
 	element.value = '0';
 	element.classList.add('slider');
 	element.id = id;

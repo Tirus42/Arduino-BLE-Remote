@@ -2,10 +2,16 @@ class UIColorSelector extends AUIElement {
 	container: HTMLDivElement;
 	colorPicker: HTMLInputElement;
 	btnScaleToMax: HTMLButtonElement;
-	sliderR: SliderElement;
-	sliderG: SliderElement;
-	sliderB: SliderElement;
-	sliderW: SliderElement;
+	btnSwitchMode: HTMLButtonElement;
+	sliderR: SliderElement;	// red
+	sliderG: SliderElement;	// green
+	sliderB: SliderElement;	// blue
+	sliderH: SliderElement;	// hue
+	sliderS: SliderElement;	// saturation
+	sliderL: SliderElement;	// light
+	sliderW: SliderElement;	// white
+	colorChannels: ColorChannels;
+	hslMode: boolean;
 
 	constructor(name: string, parent: UIGroupElement, colorChannels: ColorChannels) {
 		super(UIElementType.ColorSelector, name, parent);
@@ -14,6 +20,7 @@ class UIColorSelector extends AUIElement {
 
 		this.colorPicker = HTML.CreateColorPickerElement();
 		this.btnScaleToMax = HTML.CreateButtonElement('M');
+		this.btnSwitchMode = HTML.CreateButtonElement('HSL');
 
 		this.colorPicker.oninput = (_: Event) => {
 			const htmlColor = this.colorPicker.value;
@@ -29,10 +36,19 @@ class UIColorSelector extends AUIElement {
 		}
 		this.btnScaleToMax.title = 'Scale to max brightness';
 
+		this.btnSwitchMode.onclick = () => {
+			this.switchMode();
+		}
+
 		const colorPickerText = HTML.CreateSpanElement(' ' + name);
 
 		this.container.appendChild(this.colorPicker);
 		this.container.appendChild(this.btnScaleToMax);
+
+		if (colorChannels.hasFullRGB()) {
+			this.container.appendChild(this.btnSwitchMode);
+		}
+
 		this.container.appendChild(colorPickerText);
 		this.container.appendChild(HTML.CreateBrElement());
 
@@ -40,36 +56,44 @@ class UIColorSelector extends AUIElement {
 
 		const obj = this;
 
-		const onColorChangeFunction = function() {
-			const newColor = obj._getSliderColorValue();
+		const onRGBColorChangeFunction = function() {
+			const newColor = obj._getSliderRGBWColorValue();
 			obj.onColorChange(newColor);
 		}
 
-		this.sliderR = CreateRangeSlider(name + 'R', 'Red', onColorChangeFunction, 'red');
-		this.sliderG = CreateRangeSlider(name + 'G', 'Green', onColorChangeFunction, 'green');
-		this.sliderB = CreateRangeSlider(name + 'B', 'Blue', onColorChangeFunction, 'blue');
-		this.sliderW = CreateRangeSlider(name + 'W', 'White', onColorChangeFunction, 'white');
+		const onHSLColorChangeFunction = function() {
+			const newHSLWColor = obj._getSliderHSLWColorValue();
+			obj.onColorChange(newHSLWColor);
+		}
+
+		const onWColorChangeFunction = function() {
+			onRGBColorChangeFunction();
+		}
+
+		this.sliderR = CreateRangeSlider(name + 'R', 'Red', onRGBColorChangeFunction, 'red');
+		this.sliderG = CreateRangeSlider(name + 'G', 'Green', onRGBColorChangeFunction, 'green');
+		this.sliderB = CreateRangeSlider(name + 'B', 'Blue', onRGBColorChangeFunction, 'blue');
+
+		this.sliderH = CreateRangeSlider(name + 'H', 'Hue', onHSLColorChangeFunction, 'hue', 0, 360);
+		this.sliderS = CreateRangeSlider(name + 'S', 'Satur', onHSLColorChangeFunction, 'saturation', 0, 100);
+		this.sliderL = CreateRangeSlider(name + 'L', 'Light', onHSLColorChangeFunction, 'lightness', 0, 100);
+
+		this.sliderW = CreateRangeSlider(name + 'W', 'White', onWColorChangeFunction, 'white');
+
+		this.colorChannels = colorChannels;
+		this.hslMode = false;
 
 		pElement.appendChild(this.sliderR.container);
 		pElement.appendChild(this.sliderG.container);
 		pElement.appendChild(this.sliderB.container);
+
+		pElement.appendChild(this.sliderH.container);
+		pElement.appendChild(this.sliderS.container);
+		pElement.appendChild(this.sliderL.container);
+
 		pElement.appendChild(this.sliderW.container);
 
-		if (!colorChannels.r) {
-			this.sliderR.container.classList.add('hidden');
-		}
-
-		if (!colorChannels.g) {
-			this.sliderG.container.classList.add('hidden');
-		}
-
-		if (!colorChannels.b) {
-			this.sliderB.container.classList.add('hidden');
-		}
-
-		if (!colorChannels.w) {
-			this.sliderW.container.classList.add('hidden');
-		}
+		this._applyVisibility();
 
 		this.container.appendChild(pElement);
 	}
@@ -78,7 +102,7 @@ class UIColorSelector extends AUIElement {
 		return this.container;
 	}
 
-	_getSliderColorValue() : RGBWColor {
+	_getSliderRGBWColorValue() : RGBWColor {
 		const sliderR = this.sliderR.slider;
 		const sliderG = this.sliderG.slider;
 		const sliderB = this.sliderB.slider;
@@ -87,22 +111,50 @@ class UIColorSelector extends AUIElement {
 		return new RGBWColor(parseInt(sliderR.value), parseInt(sliderG.value), parseInt(sliderB.value), parseInt(sliderW.value));
 	}
 
-	setValue(newColor: RGBWColor) {
-		// Set color picker
-		this.colorPicker.value = newColor.toHexColor();
+	_getSliderHSLWColorValue() : HSLWColor {
+		const sliderH = this.sliderH.slider;
+		const sliderS = this.sliderS.slider;
+		const sliderL = this.sliderL.slider;
+		const sliderW = this.sliderW.slider;
 
-		this.sliderR.slider.value = '' + newColor.r;
-		this.sliderG.slider.value = '' + newColor.g;
-		this.sliderB.slider.value = '' + newColor.b;
-		this.sliderW.slider.value = '' + newColor.w;
+		return new HSLWColor(parseInt(sliderH.value), parseInt(sliderS.value), parseInt(sliderL.value), parseInt(sliderW.value));
+	}
+
+	setValue(newColor: IColor) {
+		// Set color picker
+		this.colorPicker.value = newColor.toRGB().toHexColor();
+
+		const rgb = newColor.toRGB();
+
+		this.sliderR.slider.value = '' + rgb.r;
+		this.sliderG.slider.value = '' + rgb.g;
+		this.sliderB.slider.value = '' + rgb.b;
+
+		const hsl = newColor.toHSL();
+
+		this.sliderH.slider.value = '' + hsl.h;
+		this.sliderS.slider.value = '' + hsl.s;
+		this.sliderL.slider.value = '' + hsl.l;
+
+		debugger;
+		this.sliderW.slider.value = '' + newColor.toRGBW().w;
 	}
 
 	getValue() : RGBWColor {
-		return this._getSliderColorValue();
+		const rgbw = this._getSliderRGBWColorValue();
+
+		if (this.hslMode) {
+			const rgb = this._getSliderHSLWColorValue().toRGB();
+			rgbw.r = rgb.r;
+			rgbw.g = rgb.g;
+			rgbw.b = rgb.b;
+		}
+
+		return rgbw;
 	}
 
 	scaleToMax() {
-		const newColor = this._getSliderColorValue().scaleToMax();
+		const newColor = this._getSliderRGBWColorValue().scaleToMax();
 		this.onColorChange(newColor);
 	}
 
@@ -116,11 +168,56 @@ class UIColorSelector extends AUIElement {
 		this.setValue(newValue.getRGBWValue());
 	}
 
-	onColorChange(newColor: RGBWColor) {
+	onColorChange(newColor: IColor) {
 		// Update all elements
 		this.setValue(newColor);
 
 		// Forward event
-		this.onInputValueChange(this, new ValueWrapper(newColor));
+		this.onInputValueChange(this, new ValueWrapper(newColor.toRGBW()));
+	}
+
+	switchMode() {
+		if (!this.colorChannels.hasFullRGB()) {
+			return;
+		}
+
+		this.hslMode = !this.hslMode;
+		this._applyVisibility();
+
+		this.btnSwitchMode.innerText = this.hslMode ? 'RGB' : 'HSL';
+	}
+
+	_applyVisibility() {
+		this.sliderR.container.classList.remove('hidden');
+		this.sliderG.container.classList.remove('hidden');
+		this.sliderB.container.classList.remove('hidden');
+
+		this.sliderH.container.classList.remove('hidden');
+		this.sliderS.container.classList.remove('hidden');
+		this.sliderL.container.classList.remove('hidden');
+
+		this.sliderW.container.classList.remove('hidden');
+
+		if (!this.colorChannels.r || this.hslMode) {
+			this.sliderR.container.classList.add('hidden');
+		}
+
+		if (!this.colorChannels.g || this.hslMode) {
+			this.sliderG.container.classList.add('hidden');
+		}
+
+		if (!this.colorChannels.b || this.hslMode) {
+			this.sliderB.container.classList.add('hidden');
+		}
+
+		if (!this.hslMode) {
+			this.sliderH.container.classList.add('hidden');
+			this.sliderS.container.classList.add('hidden');
+			this.sliderL.container.classList.add('hidden');
+		}
+
+		if (!this.colorChannels.w) {
+			this.sliderW.container.classList.add('hidden');
+		}
 	}
 }

@@ -84,6 +84,18 @@ input.slider {
     background-color: #0000ff44;
 }
 
+.slider-background.hue {
+    background: linear-gradient(to right, red, yellow, green, cyan, blue, violet, red);
+}
+
+.slider-background.saturation {
+    background: linear-gradient(to right, gray, white);
+}
+
+.slider-background.lightness {
+    background: linear-gradient(to right, black, white);
+}
+
 .slider-background.white {
     background-color: #ffffffbb;
 }
@@ -152,6 +164,14 @@ input.slider {
 
     .slider-background.white {
         background-color: #ffffff4b;
+    }
+
+    .slider-background.saturation {
+        color: black;
+    }
+
+    .slider-background.lightness {
+        color: black;
     }
 
     div.bevel > div.span > span {
