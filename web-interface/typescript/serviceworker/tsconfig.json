@@ -3,7 +3,7 @@
     /* Basic Options */
     "target": "es6",                          /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017','ES2018' or 'ESNEXT'. */
     "module": "commonjs",                     /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
-    "lib": ["es2017", "dom"],                             /* Specify library files to be included in the compilation. */
+    "lib": ["es6", "webworker"],                             /* Specify library files to be included in the compilation. */
 
     // "allowJs": true,                       /* Allow javascript files to be compiled. */
     // "checkJs": true,                       /* Report errors in .js files. */
@@ -13,7 +13,7 @@
     // "sourceMap": true,                     /* Generates corresponding '.map' file. */
     // "outFile": "./",                       /* Concatenate and emit output to single file. */
 
-    "outDir": "../",                        /* Redirect output structure to the directory. */
+    // "outDir": "../",                        /* Redirect output structure to the directory. */
     // "rootDir": "./",                       /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
     "composite": true,                     /* Enable project compilation */
     // "removeComments": true,                /* Do not emit comments to output. */
@@ -59,49 +59,11 @@
     // "experimentalDecorators": true,        /* Enables experimental support for ES7 decorators. */
     // "emitDecoratorMetadata": true,         /* Enables experimental support for emitting type metadata for decorators. */
 
-    "outFile": "../ble.js",
+    "outFile": "../../serviceworker.js",
     "module": "AMD",
     "noImplicitOverride": true,
 },
   "files": [
-    // external
-    "web-bluetooth-def.ts",
-
-    // UI code
-    "UIElement/UIElementType.ts",
-    "UIElement/ValueWrapper.ts",
-
-    "UIElement/AUIElement.ts",
-    "UIElement/UIGroupElement.ts",
-    "UIElement/UIColorSelector.ts",
-    "UIElement/AUISelectorElement.ts",
-    "UIElement/UIDropDownElement.ts",
-    "UIElement/UIRadioElement.ts",
-    "UIElement/UICheckBoxElement.ts",
-    "UIElement/UIRangeElement.ts",
-    "UIElement/UIButtonElement.ts",
-    "UIElement/UIInt32NumberFieldElement.ts",
-    "UIElement/AUITextFieldElement.ts",
-    "UIElement/UITextFieldElement.ts",
-    "UIElement/UIPasswordFieldElement.ts",
-    "UIElement/UICompassElement.ts",
-
-    "GUIProtocol/GUIProtocol.ts",
-    "GUIProtocol/DataBuilder.ts",
-    "GUIProtocol/BLEDataWriter.ts",
-    "GUIProtocol/BLEDataReader.ts",
-    "GUIProtocol/NetworkBufferReader.ts",
-    "GUIProtocol/Json2Ui.ts",
-
-    // app code
-    "ui.ts",
-    "globals.ts",
-	"util.ts",
-	"color.ts",
-	"html.ts",
-    "main.ts"
-  ],
-  "references": [
-    {"path": "./serviceworker/tsconfig.json"}
+    "serviceworker.ts"
   ]
 }

@@ -57,3 +57,21 @@ function MemCpy(target: Uint8Array, targetOffset: number, source: Uint8Array, so
 		target[targetOffset + i] = source[sourceOffset + i];
 	}
 }
+
+function ReloadPageAndDropWebWorkerCache() {
+	if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+		navigator.serviceWorker.controller.postMessage('clearCacheAndReload');
+	} else {
+		ReloadPage();
+	}
+}
+
+function ReloadPageAndDropWebWorkerCacheWithPrompt() {
+	if (confirm('Do you realy want to force-reload this page? This requires a internet connection.')) {
+		ReloadPageAndDropWebWorkerCache();
+	}
+}
+
+function ReloadPage() {
+	window.location.reload();
+}

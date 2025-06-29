@@ -387,6 +387,27 @@ function Init() {
 		group2.addNumberFieldInt32('Number field 2', 42).setReadOnly(true);
 		group2.addCompass('Compass2', 45);
 	}
+
+	if ('serviceWorker' in navigator) {
+		console.log('Registering service worker');
+
+		navigator.serviceWorker.register('serviceworker.js').then((reg) => {
+			reg.update();
+		});
+
+		// Force enable for the service worker
+		navigator.serviceWorker.ready.then(() => {
+			console.log('Service Worker ready.');
+		});
+
+		// Add event listener to forced page reload
+		navigator.serviceWorker.addEventListener('message', (event) => {
+			console.log(event);
+			if (event.data === 'reload') {
+				ReloadPage();
+			}
+		})
+	}
 }
 
 Init();
