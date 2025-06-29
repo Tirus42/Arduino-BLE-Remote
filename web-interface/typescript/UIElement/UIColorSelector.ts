@@ -136,7 +136,6 @@ class UIColorSelector extends AUIElement {
 		this.sliderS.slider.value = '' + hsl.s;
 		this.sliderL.slider.value = '' + hsl.l;
 
-		debugger;
 		this.sliderW.slider.value = '' + newColor.toRGBW().w;
 	}
 
