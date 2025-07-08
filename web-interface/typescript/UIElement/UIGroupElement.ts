@@ -56,6 +56,12 @@ class UIGroupElement extends AUIElement {
 		child.setPathValue(path.slice(1), newValue);
 	}
 
+	override setDisabled(disabled: boolean) {
+		for (let i = 0; i < this.elements.length; ++i) {
+			this.elements[i].setDisabled(disabled);
+		}
+	}
+
 	addRGBWColorPicker(name: string, colorChannels: ColorChannels) : UIColorSelector {
 		const colorSelector = new UIColorSelector(name, this, colorChannels);
 		this._addChildElement(colorSelector);

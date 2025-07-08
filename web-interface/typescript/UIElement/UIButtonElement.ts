@@ -24,4 +24,8 @@ class UIButtonElement extends AUIElement {
 		// This is ignored here, as the button does not store its state
 		// TODO: Trigger a click animation here?
 	}
+
+	override setDisabled(disabled: boolean) {
+		this.button.disabled = disabled;
+	}
 }

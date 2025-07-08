@@ -41,6 +41,10 @@ abstract class AUITextFieldElement extends AUIElement {
 		this.setValue(newValue.getStringValue());
 	}
 
+	override setDisabled(disabled: boolean) {
+		this.textField.disabled = disabled;
+	}
+
 	setValue(newValue: string) {
 		this.textField.value = newValue;
 	}

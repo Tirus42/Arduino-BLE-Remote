@@ -66,4 +66,8 @@ class UICompassElement extends AUIElement {
 
 		this.setValue(newValue.getNumberValue());
 	}
+
+	override setDisabled(disabled: boolean) {
+		// Compas is only a output element
+	}
 }

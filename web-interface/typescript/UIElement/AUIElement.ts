@@ -25,6 +25,11 @@ abstract class AUIElement {
 	 */
 	abstract setPathValue(path: string[], newValue: ValueWrapper) : void;
 
+	/**
+	 * Enables or disables this and all child elements recursivly.
+	 */
+	abstract setDisabled(disabled: boolean) : void;
+
 	protected checkValidPath(path: string[]) {
 		if (path.length != 1 || path[0] !== this.getName()) {
 			throw "Invalid path, got '" + path.toString() + " but is '" + this.getName() + "'";

@@ -37,10 +37,14 @@ class UIDropDownElement extends AUISelectorElement {
 		return this.container;
 	}
 
-	override  setSelectedIndex(newSelectedIndex: number) {
+	override setSelectedIndex(newSelectedIndex: number) {
 		super.setSelectedIndex(newSelectedIndex);
 
 		this.options[newSelectedIndex].selected = true;
+	}
+
+	override setDisabled(disabled: boolean) {
+		this.dropDown.disabled = disabled;
 	}
 
 	override onInputValueChange() {

@@ -36,6 +36,10 @@ class UICheckBoxElement extends AUIElement {
 		this.setState(newValue.getBooleanValue());
 	}
 
+	override setDisabled(disabled: boolean) {
+		this.checkbox.disabled = disabled;
+	}
+
 	override onInputValueChange() {
 		const newState: boolean = this.checkbox.checked;
 

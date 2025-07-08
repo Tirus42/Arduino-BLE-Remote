@@ -167,6 +167,19 @@ class UIColorSelector extends AUIElement {
 		this.setValue(newValue.getRGBWValue());
 	}
 
+	override setDisabled(readOnly: boolean) {
+		this.colorPicker.disabled = readOnly;
+
+		this.sliderR.slider.disabled = readOnly;
+		this.sliderG.slider.disabled = readOnly;
+		this.sliderB.slider.disabled = readOnly;
+		this.sliderH.slider.disabled = readOnly;
+		this.sliderS.slider.disabled = readOnly;
+		this.sliderL.slider.disabled = readOnly;
+		this.sliderW.slider.disabled = readOnly;
+		this.btnScaleToMax.disabled = readOnly;
+	}
+
 	onColorChange(newColor: IColor) {
 		// Update all elements
 		this.setValue(newColor);
