@@ -5,6 +5,8 @@
 
 #include "BLELedController.h"
 
+#include <inttypes.h>
+
 static const BLEUUID GUI_CHARACTERISTIC_UUID("013201e4-0873-4377-8bff-9a2389af3884");
 
 WebGUIHandler::WebGUIHandler(std::shared_ptr<webgui::RootElement> guiRoot, BLEService* pService) :
@@ -135,7 +137,7 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 			offset += 5;
 
 			if (content.size() < offset + strLength) {
-				Serial.printf("Ignore string value, as the content is too small, data length: %u bytes, string length: %u bytes\n", content.size(), strLength);
+				Serial.printf("Ignore string value, as the content is too small, data length: %u bytes, string length: %" PRIu32 " bytes\n", content.size(), strLength);
 				return;
 			}
 
@@ -160,7 +162,7 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 		}
 
 		default:
-			Serial.printf("Unhandled value data type: %u\n", uint32_t(type));
+			Serial.printf("Unhandled value data type: %" PRIu32 "\n", uint32_t(type));
 			return;
 	}
 }
