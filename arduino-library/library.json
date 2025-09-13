@@ -1,8 +1,8 @@
 {
   "name": "BLE Remote",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "description": "BLE peripheral implementation for remote control of custom defined values.",
-  "keywords": "ble, remote, control, led",
+  "keywords": "ble, remote, control, led, gui, web-interface",
   "repository":
   {
     "type": "git",
