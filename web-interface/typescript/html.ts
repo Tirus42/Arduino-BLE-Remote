@@ -105,4 +105,28 @@ class HTML {
 	static CreateBrElement() : HTMLBRElement {
 		return document.createElement('br');
 	}
+
+	static CreateBoldElement(value: string) : HTMLElement {
+		let element = document.createElement('b');
+		element.innerText = value;
+		return element;
+	}
+
+	static CreateAnchorElement(url: string) : HTMLAnchorElement {
+		let element = document.createElement('a');
+		element.href = url;
+		return element;
+	}
+
+	static CreateImageElement(src: string) : HTMLImageElement {
+		let img = document.createElement('img');
+		img.src = src;
+		return img;
+	}
+
+	static CreateHElement(headerNumber: number, text: string) : HTMLElement {
+		let element = document.createElement('h' + headerNumber);
+		element.innerText = text;
+		return element;
+	}
 }
