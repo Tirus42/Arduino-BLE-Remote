@@ -20,3 +20,7 @@ const LED_CHARACTERISTICS = new Map<string, string>([
 const CHARACTERISTIC_MODEL_NAME_UUID = "928ec7e1-b867-4b7d-904b-d3b8769a7299";
 const CHARACTERISTIC_LEDINFO_UUID = "013201e4-0873-4377-8bff-9a2389af3883";
 const CHARACTERISTIC_GUI_UUID = "013201e4-0873-4377-8bff-9a2389af3884";
+
+function IsDeviceAlreadyConnected(device: BluetoothDevice) : boolean {
+	return ConnectedDevices.has(device);
+}

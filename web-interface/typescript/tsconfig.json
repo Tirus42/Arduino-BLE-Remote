@@ -94,6 +94,7 @@
     "GUIProtocol/Json2Ui.ts",
 
     // app code
+    "BLEDeviceConnection.ts",
     "ui.ts",
     "globals.ts",
 	"util.ts",
