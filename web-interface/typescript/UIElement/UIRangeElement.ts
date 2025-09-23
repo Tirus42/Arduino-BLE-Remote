@@ -1,6 +1,7 @@
 class UIRangeElement extends AUIElement {
 	container: HTMLDivElement;
 	range: HTMLInputElement;
+	rawValueLabel: HTMLLabelElement;
 	minValue: number;
 	maxValue: number;
 
@@ -9,6 +10,7 @@ class UIRangeElement extends AUIElement {
 
 		this.container = HTML.CreateDivElement('bevel');
 		this.range = HTML.CreateRangeElement(min, max, value);
+		this.rawValueLabel = HTML.CreateLabelElement();
 		this.minValue = min;
 		this.maxValue = max;
 
@@ -23,6 +25,9 @@ class UIRangeElement extends AUIElement {
 
 		this.container.appendChild(spanDiv);
 		this.container.appendChild(this.range);
+		this.container.appendChild(this.rawValueLabel);
+
+		this._updateUIValues();
 	}
 
 	getDomRootElement() : HTMLElement {
@@ -35,6 +40,8 @@ class UIRangeElement extends AUIElement {
 		}
 
 		this.range.value = '' + newValue;
+
+		this._updateUIValues();
 	}
 
 	override setPathValue(path: string[], newValue: ValueWrapper) {
@@ -56,6 +63,12 @@ class UIRangeElement extends AUIElement {
 	}
 
 	override onInputValueChange() {
+		this._updateUIValues();
+
 		super.onInputValueChange(this, new ValueWrapper(this.getValue()));
+	}
+
+	private _updateUIValues() {
+		this.rawValueLabel.innerHTML = this.getValue() + ' / ' + this.maxValue;
 	}
 }

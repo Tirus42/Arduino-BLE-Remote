@@ -92,7 +92,7 @@ class HTML {
 		return elem;
 	}
 
-	static CreateLabelElement(optValue: string | null) : HTMLLabelElement {
+	static CreateLabelElement(optValue: string | null = null) : HTMLLabelElement {
 		const elem = document.createElement('label');
 
 		if (optValue) {
