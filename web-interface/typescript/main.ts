@@ -355,6 +355,23 @@ window.onerror =  (event: string | Event) => {
 	}
 };
 
+function ToggleSettingsMenu() {
+	const overlay = document.getElementById('settings-overlay');
+
+	if (overlay) {
+		overlay.style.display = overlay.style.display === 'flex' ? 'none' : 'flex';
+	}
+}
+
+function HandleSettingsOverlayClick(event: MouseEvent) {
+	const target = event.target as HTMLElement;
+	const content = document.querySelector('.overlay-content') as HTMLDivElement;
+
+	if (!content.contains(target)) {
+		ToggleSettingsMenu();
+	}
+}
+
 function Init() {
 	LogClear();
 

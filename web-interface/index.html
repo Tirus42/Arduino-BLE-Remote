@@ -13,9 +13,17 @@
 
 		<p>
 			<button onclick="Scan()">Scan and connect to a BLE device</button>
-			<button onclick="ReloadPageAndDropWebWorkerCacheWithPrompt()">Reload WebApp</button>
+			<button onclick="ToggleSettingsMenu()">⚙</button>
 			<br>Debug Output:<br>
 			<textarea id="log" rows="10" style="width:100%;" disabled></textarea><br>
 		</p>
+
+		<!-- Overlay settings menu -->
+		<div class="overlay" id="settings-overlay" onclick="HandleSettingsOverlayClick(event)">
+			<div class="overlay-content">
+			<button class="close-btn" onclick="ToggleSettingsMenu()">×</button>
+			<button onclick="ReloadPageAndDropWebWorkerCacheWithPrompt()">Reload WebApp</button>
+			</div>
+		</div>
 	</body>
 </html>
