@@ -2,7 +2,9 @@ const PendingCharacteristicPromises = new Map();
 
 const ConnectedDevices : Set<BluetoothDevice> = new Set();
 
-const SERVICE_UUID = "a6a2fc07-815c-4262-97a9-1cef5181a1e4";
+const SERVICE_PRIMARY_UUID = "a6a2fc07-815c-4262-97a9-1cef5181a1e4";
+const SERVICE_SECONDARY_UUID ="a6a2fc07-815c-4262-97a9-1cef5181a1e5";
+
 const LED_CHARACTERISTICS = new Map<string, string>([
     ["cd7ce55d-019d-4204-ad2e-a4d1464e3840", "Warp"],
     ["45864431-5197-4c89-9c52-30e8ec7ac523", "Impulse"],
@@ -23,4 +25,31 @@ const CHARACTERISTIC_GUI_UUID = "013201e4-0873-4377-8bff-9a2389af3884";
 
 function IsDeviceAlreadyConnected(device: BluetoothDevice) : boolean {
 	return ConnectedDevices.has(device);
+}
+
+function GetConfig_ShowSecondaryDevices() : boolean {
+	const checkbox = document.getElementById('config_show_secondary_devices') as HTMLInputElement;
+	return checkbox.checked;
+}
+
+function GetBLEServicesArray() : string[] {
+	let result = [SERVICE_PRIMARY_UUID];
+
+	if (GetConfig_ShowSecondaryDevices()) {
+		result.push(SERVICE_SECONDARY_UUID);
+	}
+
+	console.log(result);
+
+	return result;
+}
+
+function GetBLEServiceFilter() {
+	let result = [{services: [SERVICE_PRIMARY_UUID]}];
+
+	if (GetConfig_ShowSecondaryDevices()) {
+		result.push({services: [SERVICE_SECONDARY_UUID]});
+	}
+
+	return result;
 }

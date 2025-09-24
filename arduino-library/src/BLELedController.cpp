@@ -31,7 +31,8 @@ static const std::map<std::string, UUID> WELL_KNOWN_LED_CHARACTERISTICS = {
 };
 
 
-static const BLEUUID SERVICE_UUID("a6a2fc07-815c-4262-97a9-1cef5181a1e4");
+static const BLEUUID SERVICE_PRIMARY_UUID("a6a2fc07-815c-4262-97a9-1cef5181a1e4");
+static const BLEUUID SERVICE_SECONDARY_UUID("a6a2fc07-815c-4262-97a9-1cef5181a1e5");
 
 static const BLEUUID MODEL_NAME_CHARACTERISTIC_UUID("928ec7e1-b867-4b7d-904b-d3b8769a7299");
 static const BLEUUID LED_INFO_CHARACTERISTIC_UUID("013201e4-0873-4377-8bff-9a2389af3883");
@@ -75,9 +76,9 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 
 	uint8_t clientLimit;
 
-	InternalData(uint8_t clientLimit) :
+	InternalData(uint8_t clientLimit, DeviceType deviceType) :
 		pServer(BLEDevice::createServer()),
-		pService(pServer->createService(SERVICE_UUID)),
+		pService(pServer->createService(GetServiceUUID(deviceType))),
 		modelNameCharacteristic(pService->createCharacteristic(MODEL_NAME_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ)),
 		ledInfoCharacteristic(nullptr),
 		optWebGUIHandler(),
@@ -184,12 +185,13 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 	}
 };
 
-BLELedController::BLELedController(const char* deviceName, const char* modelName, uint8_t clientLimit) :
+BLELedController::BLELedController(const char* deviceName, const char* modelName, uint8_t clientLimit, DeviceType deviceType) :
 	onConnectCallback(),
 	onDisconnectCallback(),
 	uuidToCharacteristicMap(),
 	internal(),
-	errorLogTarget(nullptr) {
+	errorLogTarget(nullptr),
+	deviceType(deviceType) {
 
 	if (clientLimit == 0) {
 		clientLimit = 1;
@@ -197,7 +199,7 @@ BLELedController::BLELedController(const char* deviceName, const char* modelName
 
 	BLEDevice::init(deviceName);
 
-	internal.reset(new InternalData(clientLimit));
+	internal.reset(new InternalData(clientLimit, deviceType));
 
 	// Set global instance
 	instance = this;
@@ -235,7 +237,7 @@ void BLELedController::begin() {
 
 	// Start advertising
 	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-	pAdvertising->addServiceUUID(SERVICE_UUID);
+	pAdvertising->addServiceUUID(GetServiceUUID(deviceType));
 	internal->pServer->getAdvertising()->start();
 }
 
@@ -304,6 +306,10 @@ UUID BLELedController::GenerateUUIDByName(const std::string& name) {
 	mbedtls_md5_free(&ctx);
 
 	return result;
+}
+
+BLEUUID BLELedController::GetServiceUUID(DeviceType deviceType) {
+	return deviceType == DeviceType::Primary ? SERVICE_PRIMARY_UUID : SERVICE_SECONDARY_UUID;
 }
 
 /////////////////////

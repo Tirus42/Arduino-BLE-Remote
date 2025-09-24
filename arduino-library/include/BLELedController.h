@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DeviceType.h"
+
 #include <RGBW.h>
 #include <ColorChannels.h>
 
@@ -9,7 +11,7 @@
 #include <vector>
 #include <string>
 
-class NimBLECharacteristic;
+#include <NimBLEDevice.h>
 
 namespace webgui {
 	struct RootElement;
@@ -29,6 +31,7 @@ class BLELedController {
 		std::unique_ptr<InternalData> internal;
 
 		Print* errorLogTarget;
+		const DeviceType deviceType;
 
 		void onCharacteristicWritten(NimBLECharacteristic* pCharacteristic);
 
@@ -53,7 +56,7 @@ class BLELedController {
 		* Defaults to a client limit of 1 client, then stops advertising.
 		* The client limit can be increased, but more then 3 did not seem to work with the used library.
 		*/
-		BLELedController(const char* deviceName, const char* modelName = nullptr, uint8_t clientLimit = 1);
+		BLELedController(const char* deviceName, const char* modelName = nullptr, uint8_t clientLimit = 1, DeviceType deviceType = DeviceType::Primary);
 		~BLELedController();
 
 		/// Set or remove error logging target.
@@ -98,4 +101,9 @@ class BLELedController {
 		* As name any string can be supplied. Internally a hash function is used.
 		*/
 		static UUID GenerateUUIDByName(const std::string& name);
+
+		/**
+		 * \returns the service UUID for the specific device type
+		 */
+		static BLEUUID GetServiceUUID(DeviceType deviceType);
 };

@@ -22,6 +22,10 @@
 		<div class="overlay" id="settings-overlay" onclick="HandleSettingsOverlayClick(event)">
 			<div class="overlay-content">
 			<button class="close-btn" onclick="ToggleSettingsMenu()">×</button>
+			<label>
+				<input type="checkbox" id="config_show_secondary_devices">Show secondary devices</input>
+			</label>
+			<br>
 			<button onclick="ReloadPageAndDropWebWorkerCacheWithPrompt()">Reload WebApp</button>
 			</div>
 		</div>

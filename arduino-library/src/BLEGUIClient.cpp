@@ -1,10 +1,11 @@
 #include "BLEGUIClient.h"
 
+#include "BLELedController.h"
+
 #include <lwip/def.h>	// for htonl()
 
 // UUIDs from the "BLE Remote" library used for the GUI Protocol
 // TODO: Deduplicate, use a shared header
-static BLEUUID SERVICE_UUID("a6a2fc07-815c-4262-97a9-1cef5181a1e4");
 static BLEUUID CHARACTERISTIC_UUID("013201e4-0873-4377-8bff-9a2389af3884");
 
 BLEGUIClient::BLEGUIClient(const BLEAddress& addr) :
@@ -33,7 +34,12 @@ BLEGUIClient::BLEGUIClient(const BLEAddress& addr) :
 
 	Serial.print("Connected\n");
 
-	BLERemoteService* remoteService = pClient->getService(SERVICE_UUID);
+	BLERemoteService* remoteService = pClient->getService(BLELedController::GetServiceUUID(DeviceType::Primary));
+
+	if (remoteService == nullptr) {
+		// Try as secondary device service UUID
+		remoteService = pClient->getService(BLELedController::GetServiceUUID(DeviceType::Secondary));
+	}
 
 	if (remoteService == nullptr) {
 		Serial.printf("BLEClient: Service on device not found! Disconnecting.\n");

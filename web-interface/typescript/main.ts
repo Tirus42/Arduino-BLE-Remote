@@ -6,9 +6,7 @@ function Scan() {
 	try {
 		navigator.bluetooth.requestDevice({
 			//acceptAllDevices: true,
-			filters: [{
-				services: [SERVICE_UUID]
-			}]
+			filters: GetBLEServiceFilter()
 		}).then(device => {
 			if (IsDeviceAlreadyConnected(device)) {
 				Log("Device is already connected, ignoring request.");
