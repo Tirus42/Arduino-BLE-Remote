@@ -7,6 +7,7 @@ class BLEDeviceConnection extends UIGroupElement {
 	ledInfoChangeHandler: (event: Event) => void;
 	ledInfoCharacteristic: BluetoothRemoteGATTCharacteristic | undefined;
 	guiControl: GUIProtocolHandler | undefined;
+	connectingAnimationElement: HTMLDivElement | null;
 
 	classicCharacteristicMapping: Map<string, BluetoothRemoteGATTCharacteristic>;
 
@@ -36,6 +37,8 @@ class BLEDeviceConnection extends UIGroupElement {
 					this.destroy();
 			}
 		}
+
+		this.connectingAnimationElement = this._createConnectingAnimation();
 	}
 
 	override destroy() {
@@ -101,6 +104,9 @@ class BLEDeviceConnection extends UIGroupElement {
 	}
 
 	private _addRGBWCharacteristicElement(name: string, characteristic: BluetoothRemoteGATTCharacteristic, colorChannels: ColorChannels) {
+		// Remove connecting animation
+		this._removeConnectingAnimation();
+
 		const controlElement = this.addRGBWColorPicker(name, colorChannels);
 		const absoluteName = controlElement.getAbsoluteName();
 
@@ -162,6 +168,10 @@ class BLEDeviceConnection extends UIGroupElement {
 		}
 		else if (characteristic.uuid == CHARACTERISTIC_GUI_UUID) {
 			const handleJsonFunction = (json: ADataJSON) => {
+				// Remove connecting animation
+				this._removeConnectingAnimation();
+
+				// Process received GUI-JSON and construct the GUI controls
 				ProcessJSON(this, json);
 			}
 
@@ -257,5 +267,25 @@ class BLEDeviceConnection extends UIGroupElement {
 
 		this._addRGBWCharacteristicElement(name, characteristic, new ColorChannels());
 		return true;
+	}
+
+	private _createConnectingAnimation() : HTMLDivElement {
+		let container = HTML.CreateDivElement('ble-connect-container');
+
+		for (let i = 0; i < 6; ++i) {
+			container.appendChild(HTML.CreateDivElement('ble-connect-dot'));
+		}
+
+		container.appendChild(HTML.CreateDivElement('ble-connect-glyph'));
+
+		this.container.appendChild(container);
+		return container;
+	}
+
+	private _removeConnectingAnimation() {
+		if (this.connectingAnimationElement) {
+			this.getDomRootElement().removeChild(this.connectingAnimationElement);
+			this.connectingAnimationElement = null;
+		}
 	}
 }

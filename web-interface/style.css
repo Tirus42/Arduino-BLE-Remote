@@ -191,6 +191,93 @@ input.slider {
     margin-bottom: 20px;
 }
 
+/**
+ * BLE pending connection animation elements.
+*/
+.ble-connect-container {
+    position: center;
+    width: 200px;
+    height: 200px;
+}
+
+.ble-connect-glyph {
+    width: 60px;
+    height: 60px;
+    background-color: #00aaff;
+    clip-path: polygon(50% 0%, 60% 40%, 40% 40%, 60% 60%, 40% 60%, 50% 100%);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulse 1.5s infinite;
+}
+
+.ble-connect-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #00aaff;
+    border-radius: 50%;
+    position: absolute;
+    opacity: 0;
+}
+
+/* Individual dot start locations and animations */
+.ble-connect-dot:nth-child(1) {
+    top: 10%; left: 10%;
+    animation: flyToCenter 2s ease-in-out infinite;
+    animation-delay: 0s;
+}
+
+.ble-connect-dot:nth-child(2) {
+    top: 90%; left: 20%;
+    animation: flyToCenter 2.5s ease-in-out infinite;
+    animation-delay: 0.4s;
+}
+
+.ble-connect-dot:nth-child(3) {
+    top: 30%; left: 90%;
+    animation: flyToCenter 2.2s ease-in-out infinite;
+    animation-delay: 0.8s;
+}
+
+.ble-connect-dot:nth-child(4) {
+    top: 80%; left: 80%;
+    animation: flyToCenter 2.8s ease-in-out infinite;
+    animation-delay: 1.2s;
+}
+
+.ble-connect-dot:nth-child(5) {
+    top: 50%; left: 0%;
+    animation: flyToCenter 3s ease-in-out infinite;
+    animation-delay: 1.6s;
+}
+
+@keyframes flyToCenter {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+    100% {
+        top: 50%;
+        left: 50%;
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
 /* Media queries for dark mode users */
 
 @media (prefers-color-scheme: dark) {
