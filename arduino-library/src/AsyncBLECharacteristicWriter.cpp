@@ -49,7 +49,7 @@ void AsyncBLECharacteristicWriter::ThreadFunc() {
 	std::unique_lock<std::mutex> lock(mutex);
 
 	while (true) {
-		conditionVariable.wait(lock, [&]{
+		conditionVariable.wait(lock, [&] {
 			return (!sendQueue.empty()) || threadShouldExit;
 		});
 
@@ -66,6 +66,7 @@ void AsyncBLECharacteristicWriter::ThreadFunc() {
 
 				while (!sendSuccess) {
 					os_mbuf* om;
+
 					do {
 						om = ble_hs_mbuf_from_flat(buffer.data(), buffer.size());
 
@@ -78,6 +79,7 @@ void AsyncBLECharacteristicWriter::ThreadFunc() {
 					} while (!om);
 
 					int txRet = ble_gatts_notify_custom(conHandle, pCharacteristic->getHandle(), om);
+
 					if (txRet == 0) {
 						sendSuccess = true;
 					} else {

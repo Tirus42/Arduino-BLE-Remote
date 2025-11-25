@@ -49,9 +49,9 @@ struct RefValueHandler : public IDataHandler<T> {
 	RefType& refValue;
 	std::function<void()> optOnChangeFunction;
 
-	RefValueHandler(RefType& refValue, const std::function<void()>& optOnChangeFunction ) :
-	refValue(refValue),
-	optOnChangeFunction(optOnChangeFunction) {}
+	RefValueHandler(RefType& refValue, const std::function<void()>& optOnChangeFunction) :
+		refValue(refValue),
+		optOnChangeFunction(optOnChangeFunction) {}
 
 	virtual T getValue() const override {
 		return T(refValue);
@@ -73,6 +73,5 @@ struct RefValueHandler : public IDataHandler<T> {
 typedef RefValueHandler<bool> BoolRefValueHandler;
 typedef RefValueHandler<int32_t, uint32_t> UIntRefValueHandler;
 typedef RefValueHandler<RGBW> RGBWRefValueHandler;
-
 
 }

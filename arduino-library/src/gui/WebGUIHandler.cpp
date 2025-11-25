@@ -72,11 +72,13 @@ void WebGUIHandler::handleGUIRequest(BLECharacteristic& characteristic) {
 			writeGUIInfoDataV1(requestId);
 			break;
 		}
+
 		case GUIClientHeader::SetValue: {
 			std::vector<uint8_t> remainingData(value.begin() + 5, value.end());
 			handleGUISetValueRequest(requestId, remainingData);
 			break;
 		}
+
 		default: {
 			Serial.printf("Unhandled client request with head byte: %u\n", headByte);
 		}
@@ -118,6 +120,7 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 			writeGUIUpdateValue(requestId, name, webgui::Int32ValueWrapper(value));
 			break;
 		}
+
 		case ValueType::Boolean: {
 			if (content.size() < offset + 2) {
 				return;
@@ -128,6 +131,7 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 			writeGUIUpdateValue(requestId, name, webgui::BooleanValueWrapper(value));
 			break;
 		}
+
 		case ValueType::String: {
 			if (content.size() < offset + 5) {
 				return;
@@ -147,6 +151,7 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 			writeGUIUpdateValue(requestId, name, webgui::StringValueWrapper(value));
 			break;
 		}
+
 		case ValueType::RGBWColor: {
 			if (content.size() < offset + 5) {
 				return;
@@ -201,15 +206,18 @@ void WebGUIHandler::writeGUIUpdateValue(uint32_t requestId, const std::string& n
 			PokeUInt32(valuePart.data() + 1, htonl(value.getAsInt32()));
 			break;
 		}
+
 		case ValueType::Boolean: {
 			valuePart.resize(2);
 			valuePart[1] = value.getAsBool();
 			break;
 		}
+
 		case ValueType::String: {
 			valuePart = MergeVectors(valuePart, StringToLengthPrefixedVector(value.getAsString()));
 			break;
 		}
+
 		case ValueType::RGBWColor: {
 			// Note: Here should dynamic_cast be used. But we compile with -fno-rtti
 			const webgui::RGBWValueWrapper& rgbwValue = static_cast<const webgui::RGBWValueWrapper&>(value);
@@ -247,6 +255,7 @@ void WebGUIHandler::writeCharacteristicData(uint8_t headByte, uint32_t requestId
 		if (errorLogTarget) {
 			errorLogTarget->printf("Cannot send data, need at least 10 bytes MTU but reported client MTU is %u\n", *clientMtu);
 		}
+
 		return;
 	}
 

@@ -14,8 +14,8 @@
 #include <NimBLEDevice.h>
 
 namespace webgui {
-	struct RootElement;
-	struct AValueWrapper;
+struct RootElement;
+struct AValueWrapper;
 }
 
 class BLELedController {

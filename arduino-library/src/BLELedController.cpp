@@ -62,7 +62,7 @@ struct BLELedController::LedMappingData {
 static std::string BleMacToString(const ble_addr_t& addr) {
 	char buffer[6 * 2 + 5 + 1];
 	snprintf(buffer, sizeof(buffer), "%02X:%02X:%02X:%02X:%02X:%02X",
-			 addr.val[5], addr.val[4], addr.val[3], addr.val[2], addr.val[1], addr.val[0]);
+	         addr.val[5], addr.val[4], addr.val[3], addr.val[2], addr.val[1], addr.val[0]);
 
 	return std::string(buffer);
 }
@@ -242,7 +242,7 @@ void BLELedController::begin() {
 }
 
 void BLELedController::update() {
-    // Nothing to do here (deprecated)
+	// Nothing to do here (deprecated)
 }
 
 void BLELedController::addRGBWCharacteristic(const std::string& name, std::function<void(RGBW newColor)> callback, const ColorChannels& colorChannels) {
@@ -354,10 +354,13 @@ void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) con
 
 		if (i.second.colorChannels.r)
 			channelString += "R";
+
 		if (i.second.colorChannels.g)
 			channelString += "G";
+
 		if (i.second.colorChannels.b)
 			channelString += "B";
+
 		if (i.second.colorChannels.w)
 			channelString += "W";
 

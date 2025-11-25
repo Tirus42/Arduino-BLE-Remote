@@ -32,7 +32,7 @@ struct BooleanValueWrapper : public AValueWrapper {
 	bool value;
 
 	BooleanValueWrapper(bool value) :
-	value(value) {}
+		value(value) {}
 
 	virtual ValueType getType() const override {
 		return ValueType::Boolean;
@@ -55,7 +55,7 @@ struct Int32ValueWrapper : public AValueWrapper {
 	int32_t value;
 
 	Int32ValueWrapper(int32_t value) :
-	value(value) {}
+		value(value) {}
 
 	virtual ValueType getType() const override {
 		return ValueType::Number;
@@ -80,7 +80,7 @@ struct StringValueWrapper : public AValueWrapper {
 	std::string value;
 
 	StringValueWrapper(const std::string& value) :
-	value(value) {}
+		value(value) {}
 
 	virtual ValueType getType() const override {
 		return ValueType::String;
@@ -103,7 +103,7 @@ struct RGBWValueWrapper : public AValueWrapper {
 	RGBW value;
 
 	RGBWValueWrapper(RGBW value) :
-	value(value) {}
+		value(value) {}
 
 	virtual ValueType getType() const override {
 		return ValueType::RGBWColor;
@@ -128,20 +128,15 @@ template <typename ValueType>
 inline std::unique_ptr<AValueWrapper> WrapValue(const ValueType& value) {
 	if constexpr(std::is_same<ValueType, int32_t>::value) {
 		return std::make_unique<Int32ValueWrapper>(value);
-	}
-	else if constexpr(std::is_same<ValueType, uint16_t>::value) {
+	} else if constexpr(std::is_same<ValueType, uint16_t>::value) {
 		return std::make_unique<Int32ValueWrapper>(value);
-	}
-	else if constexpr(std::is_same<ValueType, std::string>::value) {
+	} else if constexpr(std::is_same<ValueType, std::string>::value) {
 		return std::make_unique<StringValueWrapper>(value);
-	}
-	else if constexpr(std::is_same<ValueType, bool>::value) {
+	} else if constexpr(std::is_same<ValueType, bool>::value) {
 		return std::make_unique<BooleanValueWrapper>(value);
-	}
-	else if constexpr(std::is_same<ValueType, RGBW>::value) {
+	} else if constexpr(std::is_same<ValueType, RGBW>::value) {
 		return std::make_unique<RGBWValueWrapper>(value);
-	}
-	else {
+	} else {
 		static_assert(sizeof(ValueType) != sizeof(ValueType), "Unhandled data type error");
 	}
 }

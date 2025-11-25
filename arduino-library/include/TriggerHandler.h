@@ -15,7 +15,7 @@ struct FunctionTrigger : public ITriggerHandler {
 	std::function<void()> triggerFunction;
 
 	FunctionTrigger(const std::function<void()>& triggerFunction) :
-	triggerFunction(triggerFunction) {}
+		triggerFunction(triggerFunction) {}
 
 	static std::shared_ptr<ITriggerHandler> Create(const std::function<void()>& triggerFunction) {
 		return std::make_shared<FunctionTrigger>(triggerFunction);

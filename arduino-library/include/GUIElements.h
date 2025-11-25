@@ -17,7 +17,7 @@ struct AControlElement {
 	std::string name;
 
 	AControlElement(const std::string& name) :
-	name(name) {}
+		name(name) {}
 
 	AControlElement(const AControlElement&) = delete;
 	AControlElement& operator=(const AControlElement&) = delete;
@@ -84,8 +84,8 @@ struct AControlElementWithParent : public AControlElement {
 	GroupElement* parent;
 
 	AControlElementWithParent(GroupElement* parent, const std::string& name) :
-	AControlElement(name),
-	parent(parent) {}
+		AControlElement(name),
+		parent(parent) {}
 
 	AControlElementWithParent(const AControlElementWithParent&) = delete;
 	AControlElementWithParent& operator=(const AControlElementWithParent&) = delete;
@@ -100,8 +100,8 @@ struct AControlElementWithParentAndValue : public AControlElementWithParent {
 	std::shared_ptr<ValueHandlerType> dataHandler;
 
 	AControlElementWithParentAndValue(GroupElement* parent, const std::string& name, std::shared_ptr<ValueHandlerType> dataHandler) :
-	AControlElementWithParent(parent, name),
-	dataHandler(dataHandler) {}
+		AControlElementWithParent(parent, name),
+		dataHandler(dataHandler) {}
 
 	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const override {
 		if (!isValidPath(path) || !dataHandler)
@@ -126,7 +126,7 @@ struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler
 	int32_t max;
 
 	RangeElement(GroupElement* parent, const std::string& name, int32_t min, int32_t max, std::shared_ptr<IInt32DataHandler> dataHandler) :
-	AControlElementWithParentAndValue(parent, name, dataHandler), min(min), max(max) {}
+		AControlElementWithParentAndValue(parent, name, dataHandler), min(min), max(max) {}
 
 	GroupElement* endRange() {
 		return parent;
@@ -155,7 +155,7 @@ struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler
 
 struct CheckboxElement : public AControlElementWithParentAndValue<IBoolDataHandler> {
 	CheckboxElement(GroupElement* parent, const std::string& name, std::shared_ptr<IBoolDataHandler> dataHandler) :
-	AControlElementWithParentAndValue(parent, name, dataHandler) {}
+		AControlElementWithParentAndValue(parent, name, dataHandler) {}
 
 	GroupElement* endCheckbox() {
 		return parent;
@@ -174,8 +174,8 @@ struct AElementWithItems : public AControlElementWithParentAndValue<IUInt16DataH
 	std::vector<std::string> items;
 
 	AElementWithItems(GroupElement* parent, const std::string& name, const std::vector<std::string>& items, std::shared_ptr<IUInt16DataHandler> dataHandler) :
-	AControlElementWithParentAndValue(parent, name, dataHandler),
-	items(items) {}
+		AControlElementWithParentAndValue(parent, name, dataHandler),
+		items(items) {}
 
 	virtual std::string getElementName() const = 0;
 
@@ -209,7 +209,7 @@ struct AElementWithItems : public AControlElementWithParentAndValue<IUInt16DataH
 
 struct RadioElement : public AElementWithItems {
 	RadioElement(GroupElement* parent, const std::string& name, const std::vector<std::string>& items, std::shared_ptr<IUInt16DataHandler> dataHandler) :
-	AElementWithItems(parent, name, items, dataHandler) {};
+		AElementWithItems(parent, name, items, dataHandler) {};
 
 	GroupElement* endRadio() {
 		return parent;
@@ -222,7 +222,7 @@ struct RadioElement : public AElementWithItems {
 
 struct DropDownElement : public AElementWithItems {
 	DropDownElement(GroupElement* parent, std::string name, const std::vector<std::string>& items, std::shared_ptr<IUInt16DataHandler> dataHandler) :
-	AElementWithItems(parent, name, items, dataHandler) {};
+		AElementWithItems(parent, name, items, dataHandler) {};
 
 	GroupElement* endDropDown() {
 		return parent;
@@ -237,8 +237,8 @@ struct ButtonElement : public AControlElementWithParent {
 	std::shared_ptr<ITriggerHandler> triggerHandler;
 
 	ButtonElement(GroupElement* parent, const std::string& name, std::shared_ptr<ITriggerHandler> triggerHandler) :
-	AControlElementWithParent(parent, name),
-	triggerHandler(triggerHandler) {}
+		AControlElementWithParent(parent, name),
+		triggerHandler(triggerHandler) {}
 
 	GroupElement* endButton() {
 		return parent;
@@ -265,11 +265,11 @@ struct ButtonElement : public AControlElementWithParent {
 };
 
 struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32DataHandler> {
-	bool readOnly:1;
+	bool readOnly: 1;
 
 	NumberFieldInt32Element(GroupElement* parent, const std::string& name, std::shared_ptr<IInt32DataHandler> dataHandler) :
-	AControlElementWithParentAndValue(parent, name, dataHandler),
-	readOnly(false) {}
+		AControlElementWithParentAndValue(parent, name, dataHandler),
+		readOnly(false) {}
 
 	GroupElement* endNumberField() {
 		return parent;
@@ -291,12 +291,12 @@ struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32
 
 struct TextFieldElement : public AControlElementWithParentAndValue<IStringDataHandler> {
 	uint16_t maxLength;
-	bool config_sendValueToClient:1;
+	bool config_sendValueToClient: 1;
 
 	TextFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IStringDataHandler> dataHandler, uint16_t maxLength) :
-	AControlElementWithParentAndValue(parent, name, dataHandler),
-	maxLength(maxLength),
-	config_sendValueToClient(true) {}
+		AControlElementWithParentAndValue(parent, name, dataHandler),
+		maxLength(maxLength),
+		config_sendValueToClient(true) {}
 
 	virtual const char* getElementTypeName() const {
 		return "textfield";
@@ -323,7 +323,7 @@ struct TextFieldElement : public AControlElementWithParentAndValue<IStringDataHa
 
 struct PasswordFieldElement : public TextFieldElement {
 	PasswordFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IStringDataHandler> dataHandler, uint16_t maxLength) :
-	TextFieldElement(parent, name, dataHandler, maxLength) {
+		TextFieldElement(parent, name, dataHandler, maxLength) {
 
 		config_sendValueToClient = false;
 	}
@@ -341,8 +341,8 @@ struct RGBWFieldElement : public AControlElementWithParentAndValue<IRGBWDataHand
 	std::string channelString;
 
 	RGBWFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IRGBWDataHandler> dataHandler, const char* channelString = "RGBW") :
-	AControlElementWithParentAndValue<IRGBWDataHandler>(parent, name, dataHandler),
-	channelString(channelString) {}
+		AControlElementWithParentAndValue<IRGBWDataHandler>(parent, name, dataHandler),
+		channelString(channelString) {}
 
 	virtual const char* getElementTypeName() const {
 		return "RGBWRange";
@@ -379,7 +379,7 @@ struct CompassElement : public AControlElementWithParentAndValue<IDataHandler<T>
 	using Base::dataHandler;
 
 	CompassElement(GroupElement* parent, const std::string& name, std::shared_ptr<IDataHandler<T>> dataHandler) :
-	Base(parent, name, dataHandler) {}
+		Base(parent, name, dataHandler) {}
 
 	virtual const char* getElementTypeName() const {
 		return "Compass";
@@ -413,8 +413,8 @@ struct GroupElement : public AControlElementWithParent {
 	std::optional<bool> collapsed;
 
 	GroupElement(GroupElement* parent, std::string name) :
-	AControlElementWithParent(parent, name),
-	elements() {}
+		AControlElementWithParent(parent, name),
+		elements() {}
 
 	GroupElement* endGroup() {
 		return parent;
@@ -553,7 +553,7 @@ struct GroupElement : public AControlElementWithParent {
  */
 struct RootElement : public GroupElement {
 	RootElement() :
-	GroupElement(nullptr, "") {}
+		GroupElement(nullptr, "") {}
 
 	virtual std::string toJSON() const override {
 		return GroupElement::_toJSON("root");
