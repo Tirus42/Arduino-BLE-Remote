@@ -15,6 +15,12 @@ class PacketBuilder {
 		return data;
 	}
 
+	static CreateFloat32(number: number) : Uint8Array {
+		const data = new Uint8Array(4);
+		new DataView(data.buffer).setFloat32(0, number, false);
+		return data;
+	}
+
 	static CreateLengthPrefixedString(str: string) : Uint8Array {
 		const data = EncodeUTF8String(str);
 		return MergeUint8Arrays(PacketBuilder.CreateUInt32(data.length), data);
@@ -24,7 +30,7 @@ class PacketBuilder {
 		const prefix = PacketBuilder.CreateUInt8(value.type);
 
 		switch (value.type) {
-			case ValueType.Number:
+			case ValueType.Int32:
 				return MergeUint8Arrays(prefix, PacketBuilder.CreateUInt32(value.getNumberValue()));
 			case ValueType.Boolean:
 				return MergeUint8Arrays(prefix, PacketBuilder.CreateUInt8(value.getBooleanValue() ? 1 : 0));
@@ -37,6 +43,8 @@ class PacketBuilder {
 				const w = PacketBuilder.CreateUInt8(value.getRGBWValue().w);
 
 				return MergeUint8Arrays5(prefix, w, r, g, b);
+			case ValueType.Float32:
+				return MergeUint8Arrays(prefix, PacketBuilder.CreateFloat32(value.getNumberValue()));
 		}
 	}
 }

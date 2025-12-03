@@ -12,10 +12,11 @@
 namespace webgui {
 
 enum class ValueType : uint8_t {
-	Number = 0,
+	Int32 = 0,
 	String = 1,
 	Boolean = 2,
 	RGBWColor = 3,
+	Float32 = 4,
 };
 
 struct AValueWrapper {
@@ -25,6 +26,7 @@ struct AValueWrapper {
 
 	virtual std::string getAsString() const = 0;
 	virtual int32_t getAsInt32() const = 0;
+	virtual float getAsFloat32() const = 0;
 	virtual bool getAsBool() const = 0;
 };
 
@@ -46,6 +48,10 @@ struct BooleanValueWrapper : public AValueWrapper {
 		return value ? 1 : 0;
 	}
 
+	virtual float getAsFloat32() const override {
+		return getAsInt32();
+	}
+
 	virtual bool getAsBool() const override {
 		return value;
 	}
@@ -58,7 +64,7 @@ struct Int32ValueWrapper : public AValueWrapper {
 		value(value) {}
 
 	virtual ValueType getType() const override {
-		return ValueType::Number;
+		return ValueType::Int32;
 	}
 
 	virtual std::string getAsString() const override {
@@ -71,8 +77,41 @@ struct Int32ValueWrapper : public AValueWrapper {
 		return value;
 	}
 
+	virtual float getAsFloat32() const override {
+		return value;
+	}
+
 	virtual bool getAsBool() const override {
 		return value > 0;
+	}
+};
+
+struct Float32ValueWrapper : public AValueWrapper {
+	float value;
+
+	Float32ValueWrapper(float value) :
+		value(value) {}
+
+	virtual ValueType getType() const override {
+		return ValueType::Float32;
+	}
+
+	virtual std::string getAsString() const override {
+		std::stringstream s;
+		s << value;
+		return s.str();
+	}
+
+	virtual int32_t getAsInt32() const override {
+		return value;
+	}
+
+	virtual float getAsFloat32() const override {
+		return value;
+	}
+
+	virtual bool getAsBool() const override {
+		return value >= 1.f;
 	}
 };
 
@@ -92,6 +131,10 @@ struct StringValueWrapper : public AValueWrapper {
 
 	virtual int32_t getAsInt32() const override {
 		return 0;
+	}
+
+	virtual float getAsFloat32() const override {
+		return 0.f;
 	}
 
 	virtual bool getAsBool() const override {
@@ -119,6 +162,10 @@ struct RGBWValueWrapper : public AValueWrapper {
 		return value.getAsPackedColor();
 	}
 
+	virtual float getAsFloat32() const override {
+		return 0.f;
+	}
+
 	virtual bool getAsBool() const override {
 		return value != COLOR_OFF;
 	}
@@ -136,6 +183,8 @@ inline std::unique_ptr<AValueWrapper> WrapValue(const ValueType& value) {
 		return std::make_unique<BooleanValueWrapper>(value);
 	} else if constexpr(std::is_same<ValueType, RGBW>::value) {
 		return std::make_unique<RGBWValueWrapper>(value);
+	} else if constexpr(std::is_same<ValueType, float>::value) {
+		return std::make_unique<Float32ValueWrapper>(value);
 	} else {
 		static_assert(sizeof(ValueType) != sizeof(ValueType), "Unhandled data type error");
 	}

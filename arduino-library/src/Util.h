@@ -13,3 +13,13 @@ std::vector<uint8_t> MergeVectors(const std::vector<uint8_t>& vector0, const std
  * Splits the given string by the given delimiter in multiple substrings.
  */
 std::vector<std::string> SplitString(const std::string& input, const std::string& delimiter);
+
+/**
+ * Same as htonl() but for floating values.
+ */
+float htonf(float hostValue);
+
+/**
+ * Same as ntohl() but for floating values.
+ */
+float ntohf(float networkValue);

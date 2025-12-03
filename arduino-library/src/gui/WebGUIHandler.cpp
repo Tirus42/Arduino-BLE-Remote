@@ -110,7 +110,7 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 	ValueType type = static_cast<ValueType>(content[offset]);
 
 	switch (type) {
-		case ValueType::Number: {
+		case ValueType::Int32: {
 			if (content.size() < offset + 5) {
 				return;
 			}
@@ -166,6 +166,17 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 			break;
 		}
 
+		case ValueType::Float32: {
+			if (content.size() < offset + 5) {
+				return;
+			}
+
+			float value = ntohl(PeekFloat32(content.data() + offset + 1));
+			guiRoot->setValue(path, webgui::Float32ValueWrapper(value));
+			writeGUIUpdateValue(requestId, name, webgui::Float32ValueWrapper(value));
+			break;
+		}
+
 		default:
 			Serial.printf("Unhandled value data type: %" PRIu32 "\n", uint32_t(type));
 			return;
@@ -201,7 +212,7 @@ void WebGUIHandler::writeGUIUpdateValue(uint32_t requestId, const std::string& n
 	using ValueType = webgui::ValueType;
 
 	switch (value.getType()) {
-		case ValueType::Number: {
+		case ValueType::Int32: {
 			valuePart.resize(5);
 			PokeUInt32(valuePart.data() + 1, htonl(value.getAsInt32()));
 			break;
@@ -227,6 +238,12 @@ void WebGUIHandler::writeGUIUpdateValue(uint32_t requestId, const std::string& n
 			valuePart[2] = rgbwValue.value.r;
 			valuePart[3] = rgbwValue.value.g;
 			valuePart[4] = rgbwValue.value.b;
+			break;
+		}
+
+		case ValueType::Float32: {
+			valuePart.resize(5);
+			PokeFloat32(valuePart.data() + 1, htonf(value.getAsFloat32()));
 			break;
 		}
 	}

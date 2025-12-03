@@ -1,8 +1,9 @@
 enum ValueType {
-	Number = 0,
+	Int32 = 0,
 	String = 1,
 	Boolean = 2,
 	RGBWColor = 3,
+	Float32 = 4,
 }
 
 class ValueWrapper {
@@ -15,7 +16,7 @@ class ValueWrapper {
 	}
 
 	getNumberValue() : number {
-		if (this.type === ValueType.Number) {
+		if (this.type === ValueType.Int32 || this.type == ValueType.Float32) {
 			return <number>this.value;
 		}
 
@@ -48,7 +49,11 @@ class ValueWrapper {
 
 	private _determineType(value: number | string | boolean | RGBWColor) : ValueType {
 		if (typeof value === 'number') {
-			return ValueType.Number;
+			if (this._determinePossibleInt32(value)) {
+				return ValueType.Int32;
+			}
+
+			return ValueType.Float32;
 		}
 
 		if (typeof value === 'string') {
@@ -64,5 +69,25 @@ class ValueWrapper {
 		}
 
 		throw "Unsupported type of value '" + value + "'";
+	}
+
+	/**
+	 * Determines if the given number can be represented as int32 value or requires a floating point representation.
+	 * Checks the value range, possible Infinity/NaN value and decimal places.
+	 */
+	private _determinePossibleInt32(value: number) : boolean {
+		// Signed 32‑bit integer limits
+		const INT32_MIN = -0x80000000; // -2^31
+		const INT32_MAX = 0x7FFFFFFF; //  2^31 – 1
+
+		if (!Number.isFinite(value)) {
+			return false;
+		}
+
+		if (Number.isInteger(value) && value >= INT32_MIN && value <= INT32_MAX) {
+			return true;
+		}
+
+		return false;
 	}
 }

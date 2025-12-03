@@ -160,7 +160,7 @@ class GUIProtocolHandler {
 		const valueType = reader.extractUint8();
 
 		switch (valueType) {
-			case ValueType.Number: {
+			case ValueType.Int32: {
 				const numberValue : number = reader.extractInt32();
 				return new ValueWrapper(numberValue);
 			}
@@ -176,6 +176,10 @@ class GUIProtocolHandler {
 				const packedValue : number = reader.extractUint32();
 				const rgbwValue : RGBWColor = ExtractPackedRGBW(packedValue);
 				return new ValueWrapper(rgbwValue);
+			}
+			case ValueType.Float32: {
+				const numberValue : number = reader.extractFloat32();
+				return new ValueWrapper(numberValue);
 			}
 			default: {
 				throw "Received unhandled data type " + valueType + " via UpdateValue packet.";

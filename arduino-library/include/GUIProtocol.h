@@ -43,4 +43,12 @@ inline void PokeUInt32(void* ptr, uint32_t value) {
 	PokeData(ptr, value);
 }
 
+inline float PeekFloat32(const void* ptr) {
+	return PeekData<float>(ptr);
+}
+
+inline void PokeFloat32(void* ptr, float value) {
+	PokeData(ptr, value);
+}
+
 std::vector<uint8_t> StringToLengthPrefixedVector(const std::string& str);

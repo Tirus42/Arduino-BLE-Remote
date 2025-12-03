@@ -32,6 +32,13 @@ class NetworkBufferReader {
 		return value;
 	}
 
+	extractFloat32() : number {
+		this._checkRange(4);
+		const value = this.dataView.getFloat32(this.offset, false);
+		this.offset += 4;
+		return value;
+	}
+
 	extractData(length: number) : DataView {
 		this._checkRange(length);
 		const value = this.dataView.buffer.slice(this.offset, this.offset + length);

@@ -1,6 +1,7 @@
 #include "Util.h"
 
 #include <cstring> // for std::memcpy
+#include <arpa/inet.h>
 
 std::vector<uint8_t> MergeVectors(const std::vector<uint8_t>& vector0, const std::vector<uint8_t>& vector1) {
 	std::vector<uint8_t> result(vector0.size() + vector1.size());
@@ -30,4 +31,27 @@ std::vector<std::string> SplitString(const std::string& input, const std::string
 	}
 
 	return result;
+}
+
+union Float32UInt32Union {
+	uint32_t _uint32;
+	float _float;
+};
+
+float htonf(float hostValue) {
+	Float32UInt32Union temp;
+
+	temp._float = hostValue;
+	temp._uint32 = htonl(temp._uint32);
+
+	return temp._float;
+}
+
+float ntohf(float networkValue) {
+	Float32UInt32Union temp;
+
+	temp._float = networkValue;
+	temp._uint32 = ntohl(temp._uint32);
+
+	return temp._float;
 }

@@ -60,7 +60,7 @@ class UICompassElement extends AUIElement {
 	override setPathValue(path: string[], newValue: ValueWrapper) {
 		this.checkValidPath(path);
 
-		if (newValue.type !== ValueType.Number) {
+		if (newValue.type !== ValueType.Int32) {
 			throw 'Try to set a incompatible value type';
 		}
 
