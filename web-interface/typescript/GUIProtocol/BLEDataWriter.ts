@@ -50,7 +50,7 @@ class BLEDataWriter {
 		const sendData = this.pendingData[0].data;
 
 		const reqSendFunction = function(characteristic: BluetoothRemoteGATTCharacteristic, data: Uint8Array) {
-			characteristic.writeValue(data).then(_ => {
+			characteristic.writeValueWithoutResponse(data).then(_ => {
 				if (obj.pendingData[0].data === sendData) {
 					// Only remove the entry when the content was not replaced in the meantime
 					obj.pendingData.shift();
