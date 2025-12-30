@@ -1,6 +1,5 @@
 #include "WebGUIHandler.h"
 
-#include "GUIProtocol.h"
 #include "Util.h"
 
 #include "BLELedController.h"
@@ -186,21 +185,11 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 void WebGUIHandler::writeGUIInfoDataV1(uint32_t requestId) {
 	std::string json = guiRoot->toJSON();
 
-	writeCharacteristicData(uint8_t(GUIServerHeader::GUIData), requestId, reinterpret_cast<const uint8_t*>(json.data()), json.size());
+	writeCharacteristicData(GUIServerHeader::GUIData, requestId, reinterpret_cast<const uint8_t*>(json.data()), json.size());
 }
 
 void WebGUIHandler::writeGUIUpdateValue(uint32_t requestId, const std::vector<std::string>& path, const webgui::AValueWrapper& value) {
-	std::string concat;
-
-	for (size_t i = 0; i < path.size(); ++i) {
-		concat += path[i];
-
-		if (i + 1 < path.size()) {
-			concat += ',';
-		}
-	}
-
-	writeGUIUpdateValue(requestId, concat, value);
+	writeGUIUpdateValue(requestId, ConcatPath(path), value);
 }
 
 void WebGUIHandler::writeGUIUpdateValue(uint32_t requestId, const std::string& name, const webgui::AValueWrapper& value) {
@@ -248,12 +237,14 @@ void WebGUIHandler::writeGUIUpdateValue(uint32_t requestId, const std::string& n
 		}
 	}
 
-	std::vector<uint8_t> content = MergeVectors(namePart, valuePart);
-
-	writeCharacteristicData(uint8_t(GUIServerHeader::UpdateValue), requestId, content.data(), content.size());
+	writeCharacteristicData(GUIServerHeader::UpdateValue, requestId, MergeVectors(namePart, valuePart));
 }
 
-void WebGUIHandler::writeCharacteristicData(uint8_t headByte, uint32_t requestId, const uint8_t* data, size_t length) {
+void WebGUIHandler::writeCharacteristicData(GUIServerHeader headByte, uint32_t requestId, const std::vector<uint8_t>& data) {
+	writeCharacteristicData(headByte, requestId, data.data(), data.size());
+}
+
+void WebGUIHandler::writeCharacteristicData(GUIServerHeader headByte, uint32_t requestId, const uint8_t* data, size_t length) {
 	if (getCharacteristic().getSubscribedCount() == 0) {
 		Serial.printf("No characteristic subscribers, ignoring\n");
 		return;
@@ -278,7 +269,7 @@ void WebGUIHandler::writeCharacteristicData(uint8_t headByte, uint32_t requestId
 
 	std::vector<uint8_t> sendBuffer(*clientMtu);
 
-	sendBuffer[0] = headByte;
+	sendBuffer[0] = static_cast<uint8_t>(headByte);
 	PokeUInt32(sendBuffer.data() + 1, htonl(requestId));
 	PokeUInt32(sendBuffer.data() + 5, htonl(length));
 
@@ -297,4 +288,18 @@ void WebGUIHandler::writeCharacteristicData(uint8_t headByte, uint32_t requestId
 		guiDataSendQueue.append(data + offset, blockSize);
 		offset += blockSize;
 	}
+}
+
+std::string WebGUIHandler::ConcatPath(const std::vector<std::string>& path) {
+	std::string result;
+
+	for (size_t i = 0; i < path.size(); ++i) {
+		result += path[i];
+
+		if (i + 1 < path.size()) {
+			result += ',';
+		}
+	}
+
+	return result;
 }

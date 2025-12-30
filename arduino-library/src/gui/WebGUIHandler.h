@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GUIDefinition.h"
+#include "GUIProtocol.h"
 
 #include "AsyncBLECharacteristicWriter.h"
 
@@ -23,7 +24,13 @@ class WebGUIHandler : public BLECharacteristicCallbacks {
 		 * Writes a block of data to the characteristic. When the data is longer then the transmission size, it will be split
 		 * into several parts. The receiver can handle this by the prefixed length information.
 		 */
-		void writeCharacteristicData(uint8_t headByte, uint32_t requestId, const uint8_t* data, size_t length);
+		void writeCharacteristicData(GUIServerHeader headByte, uint32_t requestId, const std::vector<uint8_t>& data);
+		void writeCharacteristicData(GUIServerHeader headByte, uint32_t requestId, const uint8_t* data, size_t length);
+
+		/**
+		 * Concats the given path into the string representation.
+		 */
+		static std::string ConcatPath(const std::vector<std::string>& path);
 
 	public:
 		WebGUIHandler(std::shared_ptr<webgui::RootElement> guiRoot, BLEService* pService);
