@@ -61,7 +61,8 @@ struct AControlElement : public IControlElement {
 		return name;
 	}
 
-	std::string jsonPrefix(const std::string& type) const {
+	std::string jsonPrefix() const {
+		std::string type = getElementTypeName();
 		std::string prefix = "{\"type\":\""_s + type + "\",\"name\": \""_s + name + "\"";
 
 		if (isAdvanced) {
@@ -183,7 +184,7 @@ struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler
 	virtual std::string toJSON() const override {
 		std::stringstream s;
 
-		s << jsonPrefix("range");
+		s << jsonPrefix();
 		s << ",\"min\":"_s;
 		s << min;
 		s << ",\"max\":"_s;
@@ -214,7 +215,7 @@ struct CheckboxElement : public AControlElementWithParentAndValue<IBoolDataHandl
 	}
 
 	virtual std::string toJSON() const override {
-		return jsonPrefix("checkbox") + ","_s + jsonValueField(dataHandler ? dataHandler->getValue() : false) + "}"_s;
+		return jsonPrefix() + ","_s + jsonValueField(dataHandler ? dataHandler->getValue() : false) + "}"_s;
 	}
 
 	virtual void setValue(const AValueWrapper& newValue) override {
@@ -232,7 +233,7 @@ struct AElementWithItems : public AControlElementWithParentAndValue<IUInt16DataH
 
 	virtual std::string toJSON() const override {
 		std::stringstream s;
-		s << this->jsonPrefix(this->getElementTypeName());
+		s << this->jsonPrefix();
 		s << ",\"items\":[";
 
 		size_t index = 0;
@@ -300,7 +301,7 @@ struct ButtonElement : public AControlElementWithParent<ButtonElement> {
 	}
 
 	virtual std::string toJSON() const override {
-		return this->jsonPrefix("button") + "}"_s;
+		return this->jsonPrefix() + "}"_s;
 	}
 
 	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const override {
@@ -335,7 +336,7 @@ struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32
 	}
 
 	virtual std::string toJSON() const override {
-		return jsonPrefix("numberfield_int32") + ","_s + jsonValueField(dataHandler ? dataHandler->getValue() : 0) + "," + jsonField("readOnly", readOnly) + "}"_s;
+		return jsonPrefix() + ","_s + jsonValueField(dataHandler ? dataHandler->getValue() : 0) + "," + jsonField("readOnly", readOnly) + "}"_s;
 	}
 
 	virtual void setValue(const AValueWrapper& newValue) override {
@@ -360,7 +361,7 @@ struct ATextFieldElement : public AControlElementWithParentAndValue<IStringDataH
 
 	virtual std::string toJSON() const override {
 		std::string value = (config_sendValueToClient && this->dataHandler) ? this->dataHandler->getValue() : "";
-		return this->jsonPrefix(this->getElementTypeName()) + ","_s + this->jsonField("maxLength", int32_t(maxLength)) + ","_s + this->jsonValueField(value) + "}"_s;
+		return this->jsonPrefix() + ","_s + this->jsonField("maxLength", int32_t(maxLength)) + ","_s + this->jsonValueField(value) + "}"_s;
 	}
 
 	virtual void setValue(const AValueWrapper& newValue) override {
@@ -411,7 +412,7 @@ struct RGBWFieldElement : public AControlElementWithParentAndValue<IRGBWDataHand
 
 		uint32_t rgbwPackedValue = dataHandler ? dataHandler->getValue().getAsPackedColor() : 0;
 
-		s << jsonPrefix("RGBWRange");
+		s << jsonPrefix();
 		s << ",\"channel\":"_s;
 		s << "\"" << channelString << "\",";
 		s << jsonValueField(rgbwPackedValue);
@@ -448,7 +449,7 @@ struct CompassElement : public AControlElementWithParentAndValue<IDataHandler<T>
 
 		T value = dataHandler ? dataHandler->getValue() : 0.f;
 
-		s << Base::jsonPrefix("Compass");
+		s << Base::jsonPrefix();
 		s << ","_s;
 		s << Base::jsonValueField(value);
 		s << "}"_s;
@@ -549,12 +550,8 @@ struct GroupElement : public AControlElementWithParent<GroupElement> {
 	}
 
 	virtual std::string toJSON() const override {
-		return _toJSON("group");
-	}
-
-	std::string _toJSON(const char* groupTypeName) const {
 		std::stringstream s;
-		s << jsonPrefix(groupTypeName);
+		s << jsonPrefix();
 
 		if (collapsed) {
 			s << "," << jsonField("collapsed", *collapsed);
@@ -617,8 +614,8 @@ struct RootElement : public GroupElement {
 	RootElement() :
 		GroupElement(nullptr, "") {}
 
-	virtual std::string toJSON() const override {
-		return GroupElement::_toJSON("root");
+	virtual const char* getElementTypeName() const override {
+		return "root";
 	}
 
 	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const override {
