@@ -209,4 +209,12 @@ class UIGroupElement extends AUIElement {
 
 		return false;
 	}
+
+	override onConfigChanged() {
+		super.onConfigChanged();
+
+		this.elements.forEach(child => {
+			child.onConfigChanged();
+		})
+	}
 }

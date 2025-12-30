@@ -1,12 +1,23 @@
 abstract class AUIElement {
+	/**
+	 * List of all root elements. Required to access them for global events like config changes.
+	 * The AUIElement constructor and destructor handles the add/removal.
+	 */
+	static RootElements : AUIElement[] = [];
+
 	type: UIElementType;
 	name: string;
 	parent : UIGroupElement | null;
+	advanced: boolean = false;
 
 	constructor(type: UIElementType, name: string, parent: UIGroupElement | null) {
 		this.type = type;
 		this.name = name;
 		this.parent = parent;
+
+		if (parent === null) {
+			AUIElement.RootElements.push(this);
+		}
 	}
 
 	destroy() {
@@ -14,6 +25,14 @@ abstract class AUIElement {
 			if (!this.parent.eraseChildByRef(this)) {
 				throw "Failed to remove child from parent, child name: " + this.getAbsoluteName();
 			}
+		} else {
+			let index = AUIElement.RootElements.indexOf(this);
+
+			if (index < 0) {
+				throw "Expected element not present in the global RootElements list";
+			}
+
+			AUIElement.RootElements.splice(index, 1);
 		}
 	}
 
@@ -29,6 +48,32 @@ abstract class AUIElement {
 	 * Enables or disables this and all child elements recursivly.
 	 */
 	abstract setDisabled(disabled: boolean) : void;
+
+	setAdvanced(advanced: boolean) : void {
+		this.advanced = advanced;
+
+		if (advanced && !GetConfig_ShowAdvancedFields()) {
+			this.setHidden(true);
+		}
+
+		if (!advanced || GetConfig_ShowAdvancedFields()) {
+			this.setHidden(false);
+		}
+	}
+
+	setHidden(hidden: boolean) : void {
+		let rootElement = this.getDomRootElement();
+
+		if (hidden) {
+			rootElement.style.visibility = 'hidden';
+			rootElement.style.height = '0px';
+			rootElement.style.margin = '0px 0px 0px 0px';
+		} else {
+			rootElement.style.removeProperty('visibility');
+			rootElement.style.removeProperty('height');
+			rootElement.style.removeProperty('margin');
+		}
+	}
 
 	protected checkValidPath(path: string[]) {
 		if (path.length != 1 || path[0] !== this.getName()) {
@@ -56,5 +101,15 @@ abstract class AUIElement {
 		} else {
 			Log("Unhanded change event on " + sourceElement.getAbsoluteName());
 		}
+	}
+
+	onConfigChanged() {
+		this.setAdvanced(this.advanced);
+	}
+
+	static notifyConfigChanges() {
+		AUIElement.RootElements.forEach((root) => {
+			root.onConfigChanged();
+		});
 	}
 }

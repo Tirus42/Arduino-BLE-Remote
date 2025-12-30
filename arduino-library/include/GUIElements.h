@@ -13,24 +13,62 @@ namespace webgui {
 
 struct GroupElement;
 
-struct AControlElement {
+struct IControlElement {
+	virtual ~IControlElement() = default;
+
+	/**
+	 * \return the name of this element.
+	 */
+	virtual const std::string& getName() const = 0;
+
+	/**
+	 * \return name technical name of the element type.
+	 */
+	virtual const char* getElementTypeName() const = 0;
+
+	/**
+	 * Serilizes this and all child elements into a JSON string.
+	 */
+	virtual std::string toJSON() const = 0;
+
+	/**
+	 * \return the current value of the element.
+	 */
+	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const = 0;
+
+	/**
+	 * Sets a new value to the element and invoces the callback handling.
+	 */
+	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) = 0;
+};
+
+template <typename Derived>
+struct AControlElement : public IControlElement {
 	std::string name;
 
+	bool isAdvanced:1;
+
 	AControlElement(const std::string& name) :
-		name(name) {}
+		IControlElement(),
+		name(name),
+		isAdvanced(false) {}
 
 	AControlElement(const AControlElement&) = delete;
 	AControlElement& operator=(const AControlElement&) = delete;
 	virtual ~AControlElement() = default;
 
-	virtual std::string toJSON() const = 0;
-
-	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const = 0;
-
-	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) = 0;
+	virtual const std::string& getName() const override {
+		return name;
+	}
 
 	std::string jsonPrefix(const std::string& type) const {
-		return "{\"type\":\""_s + type + "\",\"name\": \""_s + name + "\"";
+		std::string prefix = "{\"type\":\""_s + type + "\",\"name\": \""_s + name + "\"";
+
+		if (isAdvanced) {
+			prefix += ',' + jsonField("advanced", true);
+		}
+
+		return prefix;
 	}
 
 	std::string jsonField(const std::string& name, const std::string& value, bool withQuotesForValue) const {
@@ -78,40 +116,46 @@ struct AControlElement {
 	std::string jsonValueField(bool value) const {
 		return jsonValueField(value ? int32_t(1) : int32_t(0));
 	}
+
+	Derived* setAdvanced(bool advanced = true) {
+		this->isAdvanced = advanced;
+		return static_cast<Derived*>(this);
+	}
 };
 
-struct AControlElementWithParent : public AControlElement {
+template <typename Derived>
+struct AControlElementWithParent : public AControlElement<Derived> {
 	GroupElement* parent;
 
 	AControlElementWithParent(GroupElement* parent, const std::string& name) :
-		AControlElement(name),
+		AControlElement<Derived>(name),
 		parent(parent) {}
 
 	AControlElementWithParent(const AControlElementWithParent&) = delete;
 	AControlElementWithParent& operator=(const AControlElementWithParent&) = delete;
 
 	bool isValidPath(const std::vector<std::string>& path) const {
-		return path.size() == 1 && path[0] == name;
+		return path.size() == 1 && path[0] == this->name;
 	}
 };
 
-template <typename ValueHandlerType>
-struct AControlElementWithParentAndValue : public AControlElementWithParent {
+template <typename ValueHandlerType, typename Derived>
+struct AControlElementWithParentAndValue : public AControlElementWithParent<Derived> {
 	std::shared_ptr<ValueHandlerType> dataHandler;
 
 	AControlElementWithParentAndValue(GroupElement* parent, const std::string& name, std::shared_ptr<ValueHandlerType> dataHandler) :
-		AControlElementWithParent(parent, name),
+		AControlElementWithParent<Derived>(parent, name),
 		dataHandler(dataHandler) {}
 
 	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const override {
-		if (!isValidPath(path) || !dataHandler)
+		if (!this->isValidPath(path) || !dataHandler)
 			return nullptr;
 
 		return WrapValue(dataHandler->getValue());
 	}
 
 	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
-		if (!isValidPath(path) || !dataHandler)
+		if (!this->isValidPath(path) || !dataHandler)
 			return false;
 
 		setValue(newValue);
@@ -121,7 +165,7 @@ struct AControlElementWithParentAndValue : public AControlElementWithParent {
 	virtual void setValue(const AValueWrapper& newValue) = 0;
 };
 
-struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler> {
+struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler, RangeElement> {
 	int32_t min;
 	int32_t max;
 
@@ -130,6 +174,10 @@ struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler
 
 	GroupElement* endRange() {
 		return parent;
+	}
+
+	virtual const char* getElementTypeName() const override {
+		return "range";
 	}
 
 	virtual std::string toJSON() const override {
@@ -153,12 +201,16 @@ struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler
 	}
 };
 
-struct CheckboxElement : public AControlElementWithParentAndValue<IBoolDataHandler> {
+struct CheckboxElement : public AControlElementWithParentAndValue<IBoolDataHandler, CheckboxElement> {
 	CheckboxElement(GroupElement* parent, const std::string& name, std::shared_ptr<IBoolDataHandler> dataHandler) :
 		AControlElementWithParentAndValue(parent, name, dataHandler) {}
 
 	GroupElement* endCheckbox() {
 		return parent;
+	}
+
+	virtual const char* getElementTypeName() const override {
+		return "checkbox";
 	}
 
 	virtual std::string toJSON() const override {
@@ -170,18 +222,17 @@ struct CheckboxElement : public AControlElementWithParentAndValue<IBoolDataHandl
 	}
 };
 
-struct AElementWithItems : public AControlElementWithParentAndValue<IUInt16DataHandler> {
+template <typename Derived>
+struct AElementWithItems : public AControlElementWithParentAndValue<IUInt16DataHandler, Derived> {
 	std::vector<std::string> items;
 
 	AElementWithItems(GroupElement* parent, const std::string& name, const std::vector<std::string>& items, std::shared_ptr<IUInt16DataHandler> dataHandler) :
-		AControlElementWithParentAndValue(parent, name, dataHandler),
+		AControlElementWithParentAndValue<IUInt16DataHandler, Derived>(parent, name, dataHandler),
 		items(items) {}
-
-	virtual std::string getElementName() const = 0;
 
 	virtual std::string toJSON() const override {
 		std::stringstream s;
-		s << jsonPrefix(getElementName());
+		s << this->jsonPrefix(this->getElementTypeName());
 		s << ",\"items\":[";
 
 		size_t index = 0;
@@ -195,7 +246,7 @@ struct AElementWithItems : public AControlElementWithParentAndValue<IUInt16DataH
 		}
 
 		s << "],";
-		s << jsonValueField(dataHandler ? dataHandler->getValue() : int32_t(0));
+		s << this->jsonValueField(this->dataHandler ? this->dataHandler->getValue() : int32_t(0));
 		s << "}";
 
 		return s.str();
@@ -203,11 +254,11 @@ struct AElementWithItems : public AControlElementWithParentAndValue<IUInt16DataH
 
 	virtual void setValue(const AValueWrapper& newValue) override {
 		uint16_t valueIndex = std::clamp<int16_t>(newValue.getAsInt32(), 0, items.size());
-		dataHandler->setValue(valueIndex);
+		this->dataHandler->setValue(valueIndex);
 	}
 };
 
-struct RadioElement : public AElementWithItems {
+struct RadioElement : public AElementWithItems<RadioElement> {
 	RadioElement(GroupElement* parent, const std::string& name, const std::vector<std::string>& items, std::shared_ptr<IUInt16DataHandler> dataHandler) :
 		AElementWithItems(parent, name, items, dataHandler) {};
 
@@ -215,12 +266,12 @@ struct RadioElement : public AElementWithItems {
 		return parent;
 	}
 
-	virtual std::string getElementName() const override {
+	virtual const char* getElementTypeName() const override {
 		return "radio";
 	}
 };
 
-struct DropDownElement : public AElementWithItems {
+struct DropDownElement : public AElementWithItems<DropDownElement> {
 	DropDownElement(GroupElement* parent, std::string name, const std::vector<std::string>& items, std::shared_ptr<IUInt16DataHandler> dataHandler) :
 		AElementWithItems(parent, name, items, dataHandler) {};
 
@@ -228,12 +279,12 @@ struct DropDownElement : public AElementWithItems {
 		return parent;
 	}
 
-	virtual std::string getElementName() const override {
+	virtual const char* getElementTypeName() const override {
 		return "dropdown";
 	}
 };
 
-struct ButtonElement : public AControlElementWithParent {
+struct ButtonElement : public AControlElementWithParent<ButtonElement> {
 	std::shared_ptr<ITriggerHandler> triggerHandler;
 
 	ButtonElement(GroupElement* parent, const std::string& name, std::shared_ptr<ITriggerHandler> triggerHandler) :
@@ -244,19 +295,23 @@ struct ButtonElement : public AControlElementWithParent {
 		return parent;
 	}
 
+	virtual const char* getElementTypeName() const override {
+		return "button";
+	}
+
 	virtual std::string toJSON() const override {
-		return jsonPrefix("button") + "}"_s;
+		return this->jsonPrefix("button") + "}"_s;
 	}
 
 	virtual std::unique_ptr<AValueWrapper> getValue(const std::vector<std::string>& path) const override {
-		if (!isValidPath(path))
+		if (!this->isValidPath(path))
 			return nullptr;
 
 		return std::make_unique<BooleanValueWrapper>(false);
 	}
 
 	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) override {
-		if (!isValidPath(path) || !triggerHandler)
+		if (!this->isValidPath(path) || !triggerHandler)
 			return false;
 
 		triggerHandler->onTrigger();
@@ -264,7 +319,7 @@ struct ButtonElement : public AControlElementWithParent {
 	}
 };
 
-struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32DataHandler> {
+struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32DataHandler, NumberFieldInt32Element> {
 	bool readOnly: 1;
 
 	NumberFieldInt32Element(GroupElement* parent, const std::string& name, std::shared_ptr<IInt32DataHandler> dataHandler) :
@@ -275,12 +330,16 @@ struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32
 		return parent;
 	}
 
+	virtual const char* getElementTypeName() const override {
+		return "numberfield_int32";
+	}
+
 	virtual std::string toJSON() const override {
 		return jsonPrefix("numberfield_int32") + ","_s + jsonValueField(dataHandler ? dataHandler->getValue() : 0) + "," + jsonField("readOnly", readOnly) + "}"_s;
 	}
 
 	virtual void setValue(const AValueWrapper& newValue) override {
-		dataHandler->setValue(newValue.getAsInt32());
+		this->dataHandler->setValue(newValue.getAsInt32());
 	}
 
 	virtual NumberFieldInt32Element* setReadOnly(bool readOnly = true) {
@@ -289,46 +348,45 @@ struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32
 	}
 };
 
-struct TextFieldElement : public AControlElementWithParentAndValue<IStringDataHandler> {
+template <typename Derived>
+struct ATextFieldElement : public AControlElementWithParentAndValue<IStringDataHandler, Derived> {
 	uint16_t maxLength;
 	bool config_sendValueToClient: 1;
 
-	TextFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IStringDataHandler> dataHandler, uint16_t maxLength) :
-		AControlElementWithParentAndValue(parent, name, dataHandler),
+	ATextFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IStringDataHandler> dataHandler, uint16_t maxLength, bool sendValueToClient) :
+		AControlElementWithParentAndValue<IStringDataHandler, Derived>(parent, name, dataHandler),
 		maxLength(maxLength),
-		config_sendValueToClient(true) {}
+		config_sendValueToClient(sendValueToClient) {}
 
-	virtual const char* getElementTypeName() const {
+	virtual std::string toJSON() const override {
+		std::string value = (config_sendValueToClient && this->dataHandler) ? this->dataHandler->getValue() : "";
+		return this->jsonPrefix(this->getElementTypeName()) + ","_s + this->jsonField("maxLength", int32_t(maxLength)) + ","_s + this->jsonValueField(value) + "}"_s;
+	}
+
+	virtual void setValue(const AValueWrapper& newValue) override {
+		this->dataHandler->setValue(newValue.getAsString());
+	}
+};
+
+struct TextFieldElement : public ATextFieldElement<TextFieldElement> {
+
+	TextFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IStringDataHandler> dataHandler, uint16_t maxLength) :
+		ATextFieldElement(parent, name, dataHandler, maxLength, true) {}
+
+	virtual const char* getElementTypeName() const override {
 		return "textfield";
 	}
 
 	GroupElement* endTextField() {
 		return parent;
 	}
-
-	virtual std::string toJSON() const override {
-		std::string value = (config_sendValueToClient && dataHandler) ? dataHandler->getValue() : "";
-		return jsonPrefix(getElementTypeName()) + ","_s + jsonField("maxLength", int32_t(maxLength)) + ","_s + jsonValueField(value) + "}"_s;
-	}
-
-	virtual void setValue(const AValueWrapper& newValue) override {
-		dataHandler->setValue(newValue.getAsString());
-	}
-
-	TextFieldElement* setSendValueToClient(bool sendToClient) {
-		config_sendValueToClient = sendToClient;
-		return this;
-	}
 };
 
-struct PasswordFieldElement : public TextFieldElement {
+struct PasswordFieldElement : public ATextFieldElement<PasswordFieldElement> {
 	PasswordFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IStringDataHandler> dataHandler, uint16_t maxLength) :
-		TextFieldElement(parent, name, dataHandler, maxLength) {
+		ATextFieldElement(parent, name, dataHandler, maxLength, false) {}
 
-		config_sendValueToClient = false;
-	}
-
-	virtual const char* getElementTypeName() const {
+	virtual const char* getElementTypeName() const override {
 		return "password";
 	}
 
@@ -337,14 +395,14 @@ struct PasswordFieldElement : public TextFieldElement {
 	}
 };
 
-struct RGBWFieldElement : public AControlElementWithParentAndValue<IRGBWDataHandler> {
+struct RGBWFieldElement : public AControlElementWithParentAndValue<IRGBWDataHandler, RGBWFieldElement> {
 	std::string channelString;
 
 	RGBWFieldElement(GroupElement* parent, const std::string& name, std::shared_ptr<IRGBWDataHandler> dataHandler, const char* channelString = "RGBW") :
-		AControlElementWithParentAndValue<IRGBWDataHandler>(parent, name, dataHandler),
+		AControlElementWithParentAndValue<IRGBWDataHandler, RGBWFieldElement>(parent, name, dataHandler),
 		channelString(channelString) {}
 
-	virtual const char* getElementTypeName() const {
+	virtual const char* getElementTypeName() const override {
 		return "RGBWRange";
 	}
 
@@ -374,14 +432,14 @@ struct RGBWFieldElement : public AControlElementWithParentAndValue<IRGBWDataHand
 };
 
 template <typename T>
-struct CompassElement : public AControlElementWithParentAndValue<IDataHandler<T>> {
-	typedef AControlElementWithParentAndValue<IDataHandler<T>> Base;
+struct CompassElement : public AControlElementWithParentAndValue<IDataHandler<T>, CompassElement<T>> {
+	typedef AControlElementWithParentAndValue<IDataHandler<T>, CompassElement<T>> Base;
 	using Base::dataHandler;
 
 	CompassElement(GroupElement* parent, const std::string& name, std::shared_ptr<IDataHandler<T>> dataHandler) :
 		Base(parent, name, dataHandler) {}
 
-	virtual const char* getElementTypeName() const {
+	virtual const char* getElementTypeName() const override {
 		return "Compass";
 	}
 
@@ -407,8 +465,8 @@ struct CompassElement : public AControlElementWithParentAndValue<IDataHandler<T>
 	}
 };
 
-struct GroupElement : public AControlElementWithParent {
-	std::vector<std::unique_ptr<AControlElement>> elements;
+struct GroupElement : public AControlElementWithParent<GroupElement> {
+	std::vector<std::unique_ptr<IControlElement>> elements;
 	// Controls collapsable + collapsed, not set -> not collapsable.
 	std::optional<bool> collapsed;
 
@@ -418,6 +476,10 @@ struct GroupElement : public AControlElementWithParent {
 
 	GroupElement* endGroup() {
 		return parent;
+	}
+
+	virtual const char* getElementTypeName() const override {
+		return "group";
 	}
 
 	/**
@@ -502,7 +564,7 @@ struct GroupElement : public AControlElementWithParent {
 
 		size_t i = 0;
 
-		for (const std::unique_ptr<AControlElement>& element : elements) {
+		for (const std::unique_ptr<IControlElement>& element : elements) {
 			s << element->toJSON();
 
 			if (i++ < elements.size() - 1) {
@@ -520,7 +582,7 @@ struct GroupElement : public AControlElementWithParent {
 			return nullptr;
 
 		for (auto& element : elements) {
-			if (element->name == path[1]) {
+			if (element->getName() == path[1]) {
 				return element->getValue({path.begin() + 1, path.end()});
 			}
 		}
@@ -537,7 +599,7 @@ struct GroupElement : public AControlElementWithParent {
 
 	bool _setValueInsideGroup(const std::vector<std::string>& pathWithoutGroup, const AValueWrapper& newValue) {
 		for (auto& element : elements) {
-			if (element->name == pathWithoutGroup[0]) {
+			if (element->getName() == pathWithoutGroup[0]) {
 				return element->setValue(pathWithoutGroup, newValue);
 			}
 		}
@@ -564,7 +626,7 @@ struct RootElement : public GroupElement {
 			return nullptr;
 
 		for (auto& element : elements) {
-			if (element->name == path[0]) {
+			if (element->getName() == path[0]) {
 				return element->getValue(path);
 			}
 		}

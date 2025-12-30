@@ -1,6 +1,7 @@
 interface ADataJSON {
 	type: string;
 	name: string;
+	advanced: boolean | undefined;
 }
 
 interface RootDataJSON extends ADataJSON {
@@ -51,6 +52,8 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 	const jType = jsonNode.type.toLowerCase();
 	const jName = jsonNode.name;
 
+	let createdElement : AUIElement;
+
 	switch (jType) {
 		case 'root': {
 			const rootNode = <RootDataJSON>(jsonNode);
@@ -60,6 +63,7 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 				ProcessJSON(currentRoot, entry);
 			});
 
+			createdElement = currentRoot;
 			break;
 		}
 
@@ -78,6 +82,8 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 
 				ProcessJSON(elem, entry);
 			}
+
+			createdElement = elem;
 			break;
 		}
 
@@ -88,7 +94,7 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const jMax = rangeNode.max;
 			const jValue = rangeNode.value;
 
-			currentRoot.addRange(jName, jMin, jMax, jValue);
+			createdElement = currentRoot.addRange(jName, jMin, jMax, jValue);
 			break;
 		}
 
@@ -96,7 +102,7 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const checkboxNode = <CheckboxJSON>(jsonNode);
 			const jValue = checkboxNode.value == 1 ? true : false;
 
-			currentRoot.addCheckBox(jName, jValue);
+			createdElement = currentRoot.addCheckBox(jName, jValue);
 			break;
 		}
 
@@ -105,7 +111,7 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const entries = radioNode.items;
 			const jValue = radioNode.value;
 
-			currentRoot.addRadioGroup(jName, entries, jValue);
+			createdElement = currentRoot.addRadioGroup(jName, entries, jValue);
 			break;
 		}
 
@@ -114,12 +120,12 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const entries = dropDownNode.items;
 			const jValue = dropDownNode.value;
 
-			currentRoot.addDropDown(jName, entries, jValue);
+			createdElement = currentRoot.addDropDown(jName, entries, jValue);
 			break;
 		}
 
 		case 'button': {
-			currentRoot.addButton(jName);
+			createdElement = currentRoot.addButton(jName);
 			break;
 		}
 
@@ -128,7 +134,7 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const jValue = numberFieldNode.value;
 			const jReadOnly = numberFieldNode.readOnly;
 
-			currentRoot.addNumberFieldInt32(jName, jValue).setReadOnly(jReadOnly);
+			createdElement = currentRoot.addNumberFieldInt32(jName, jValue).setReadOnly(jReadOnly);
 			break;
 		}
 
@@ -137,7 +143,7 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const jValue = textFieldNode.value;
 			const jMaxLength = textFieldNode.maxLength;
 
-			currentRoot.addTextField(jName, jValue, jMaxLength);
+			createdElement = currentRoot.addTextField(jName, jValue, jMaxLength);
 			break;
 		}
 
@@ -146,7 +152,7 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const jValue = textFieldNode.value;
 			const jMaxLength = textFieldNode.maxLength;
 
-			currentRoot.addPasswordField(jName, jValue, jMaxLength);
+			createdElement = currentRoot.addPasswordField(jName, jValue, jMaxLength);
 			break;
 		}
 
@@ -161,6 +167,7 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const elem = currentRoot.addRGBWColorPicker(jName, colorChannels);
 			elem.setValue(initialColor);
 
+			createdElement = elem;
 			break;
 		}
 
@@ -168,12 +175,16 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const compassNode = <CompassFieldJSON>(jsonNode);
 			const azimuth = compassNode.value;
 
-			currentRoot.addCompass(jName, azimuth);
+			createdElement = currentRoot.addCompass(jName, azimuth);
 			break;
 		}
 
 		default:
 			Log("Unhandled JSON element type: '" + jType + "'");
-			break;
+			return;
+	}
+
+	if (jsonNode.advanced) {
+		createdElement.setAdvanced(jsonNode.advanced);
 	}
 }
