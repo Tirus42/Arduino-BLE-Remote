@@ -56,10 +56,6 @@ class UIInt32NumberFieldElement extends AUIElement {
 		this.numberField.disabled = readOnly;
 	}
 
-	override setDisabled(disabled: boolean) {
-		this.numberField.disabled = disabled;
-	}
-
 	getValue() : number {
 		return parseInt(this.numberField.value);
 	}

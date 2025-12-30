@@ -25,10 +25,6 @@ class UIButtonElement extends AUIElement {
 		// TODO: Trigger a click animation here?
 	}
 
-	override setDisabled(disabled: boolean) {
-		this.button.disabled = disabled;
-	}
-
 	override setReadOnly(readOnly: boolean) {
 		this.button.disabled = readOnly;
 	}

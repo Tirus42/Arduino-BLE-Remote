@@ -59,10 +59,6 @@ class UIRangeElement extends AUIElement {
 		this.setValue(newValue.getNumberValue());
 	}
 
-	override setDisabled(disabled: boolean) {
-		this.range.disabled = disabled;
-	}
-
 	getValue() : number {
 		return parseInt(this.range.value);
 	}

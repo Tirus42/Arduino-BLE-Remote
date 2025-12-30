@@ -167,7 +167,7 @@ class UIColorSelector extends AUIElement {
 		this.setValue(newValue.getRGBWValue());
 	}
 
-	override setDisabled(readOnly: boolean) {
+	override setReadOnly(readOnly: boolean) {
 		this.colorPicker.disabled = readOnly;
 
 		this.sliderR.slider.disabled = readOnly;
@@ -178,10 +178,6 @@ class UIColorSelector extends AUIElement {
 		this.sliderL.slider.disabled = readOnly;
 		this.sliderW.slider.disabled = readOnly;
 		this.btnScaleToMax.disabled = readOnly;
-	}
-
-	override setReadOnly(readOnly: boolean) {
-		this.setDisabled(readOnly);
 	}
 
 	onColorChange(newColor: IColor) {

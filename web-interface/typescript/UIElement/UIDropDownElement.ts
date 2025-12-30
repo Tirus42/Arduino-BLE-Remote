@@ -43,10 +43,6 @@ class UIDropDownElement extends AUISelectorElement {
 		this.options[newSelectedIndex].selected = true;
 	}
 
-	override setDisabled(disabled: boolean) {
-		this.dropDown.disabled = disabled;
-	}
-
 	override setReadOnly(readOnly: boolean) {
 		this.dropDown.disabled = readOnly;
 	}

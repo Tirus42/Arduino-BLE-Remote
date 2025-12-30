@@ -67,10 +67,6 @@ class UICompassElement extends AUIElement {
 		this.setValue(newValue.getNumberValue());
 	}
 
-	override setDisabled(disabled: boolean) {
-		// Compass is only a output element
-	}
-
 	override setReadOnly(readOnly: boolean) {
 		// Compass is only a output element
 	}

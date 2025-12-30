@@ -56,12 +56,6 @@ class UIGroupElement extends AUIElement {
 		child.setPathValue(path.slice(1), newValue);
 	}
 
-	override setDisabled(disabled: boolean) {
-		for (let i = 0; i < this.elements.length; ++i) {
-			this.elements[i].setDisabled(disabled);
-		}
-	}
-
 	override setReadOnly(readOnly: boolean) {
 		// Does not have any effect there
 	}

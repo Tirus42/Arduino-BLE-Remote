@@ -46,11 +46,6 @@ abstract class AUIElement {
 	 */
 	abstract setPathValue(path: string[], newValue: ValueWrapper) : void;
 
-	/**
-	 * Enables or disables this and all child elements recursivly.
-	 */
-	abstract setDisabled(disabled: boolean) : void;
-
 	setAdvanced(advanced: boolean) : void {
 		this.advanced = advanced;
 

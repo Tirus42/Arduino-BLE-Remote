@@ -36,10 +36,6 @@ class UICheckBoxElement extends AUIElement {
 		this.setState(newValue.getBooleanValue());
 	}
 
-	override setDisabled(disabled: boolean) {
-		this.checkbox.disabled = disabled;
-	}
-
 	override setReadOnly(readOnly: boolean) {
 		this.checkbox.disabled = readOnly;
 	}
