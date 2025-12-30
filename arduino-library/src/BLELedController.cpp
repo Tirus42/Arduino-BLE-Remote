@@ -276,6 +276,13 @@ bool BLELedController::notifyGUIValueChange(const std::vector<std::string>& path
 	return internal->optWebGUIHandler->notifyGUIValueChange(path);
 }
 
+bool BLELedController::setGUIElementFlag(const std::vector<std::string>& path, webgui::GUIFlag flag, bool newState) {
+	if (!internal->optWebGUIHandler)
+		return false;
+
+	return internal->optWebGUIHandler->setGUIElementFlag(path, flag, newState);
+}
+
 void BLELedController::setOnConnectCallback(std::function<void(const char*)> onConnectCallback) {
 	this->onConnectCallback = onConnectCallback;
 }

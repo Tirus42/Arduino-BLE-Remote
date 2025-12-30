@@ -8,7 +8,9 @@ abstract class AUIElement {
 	type: UIElementType;
 	name: string;
 	parent : UIGroupElement | null;
+
 	advanced: boolean = false;
+	readOnly: boolean = false;
 
 	constructor(type: UIElementType, name: string, parent: UIGroupElement | null) {
 		this.type = type;
@@ -61,6 +63,25 @@ abstract class AUIElement {
 		}
 	}
 
+	/**
+	 * Disables the field for user input.
+	 * The value can still change via remote updates.
+	 * But the user should not be able to change the value anymore.
+	 * Also visually the field should look disabled (e.g. greyed out).
+	 */
+	abstract setReadOnly(readOnly: boolean) : void;
+
+	setFlag(flag: UIFlagType, newState: boolean) {
+		switch (flag) {
+			case UIFlagType.Advanced:
+				this.setAdvanced(newState);
+				break;
+			case UIFlagType.ReadOnly:
+				this.setReadOnly(newState);
+				break;
+		}
+	}
+
 	setHidden(hidden: boolean) : void {
 		let rootElement = this.getDomRootElement();
 
@@ -93,6 +114,14 @@ abstract class AUIElement {
 		const ret = this.parent ? this.parent.getAbsoluteName() : [];
 		ret.push(this.name);
 		return ret;
+	}
+
+	getByPath(path: string[]) : AUIElement | null {
+		if (path.length === 1 && path[0] === this.getName()) {
+			return this;
+		}
+
+		return null;
 	}
 
 	onInputValueChange(sourceElement: AUIElement, newValue: ValueWrapper) {

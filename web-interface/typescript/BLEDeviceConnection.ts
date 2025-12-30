@@ -181,7 +181,18 @@ class BLEDeviceConnection extends UIGroupElement {
 				this.setPathValue(completePath, newValue);
 			}
 
-			this.guiControl = new GUIProtocolHandler(characteristic, handleJsonFunction, handleUpdateValueFunction);
+			const handleFlagUpdateFunction = (path: string[], flag: UIFlagType, newState: boolean) => {
+				const completePath : string[] = [this.getName()].concat(path);
+				let targetElem = this.getByPath(completePath);
+
+				if (!targetElem) {
+					throw "UI element for path '" + path + "' not found";
+				}
+
+				targetElem.setFlag(flag, newState);
+			}
+
+			this.guiControl = new GUIProtocolHandler(characteristic, handleJsonFunction, handleUpdateValueFunction, handleFlagUpdateFunction);
 		}
 	}
 

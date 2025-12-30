@@ -20,6 +20,9 @@ class WebGUIHandler : public BLECharacteristicCallbacks {
 		void writeGUIUpdateValue(uint32_t requestId, const std::vector<std::string>& path, const webgui::AValueWrapper& value);
 		void writeGUIUpdateValue(uint32_t requestId, const std::string& name, const webgui::AValueWrapper& value);
 
+		void writeGUIUpdateFlag(uint32_t requestId, const std::vector<std::string>& path, webgui::GUIFlag flag, bool newState);
+		void writeGUIUpdateFlag(uint32_t requestId, const std::string& name, webgui::GUIFlag flag, bool newState);
+
 		/**
 		 * Writes a block of data to the characteristic. When the data is longer then the transmission size, it will be split
 		 * into several parts. The receiver can handle this by the prefixed length information.
@@ -37,6 +40,7 @@ class WebGUIHandler : public BLECharacteristicCallbacks {
 		~WebGUIHandler();
 
 		bool notifyGUIValueChange(const std::vector<std::string>& path);
+		bool setGUIElementFlag(const std::vector<std::string>& path, webgui::GUIFlag flag, bool newState);
 
 		virtual void onWrite(BLECharacteristic* pCharacteristic/*, esp_ble_gatts_cb_param_t* param*/) override;
 		virtual void onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue) override;

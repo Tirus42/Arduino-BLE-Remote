@@ -62,6 +62,10 @@ class UIGroupElement extends AUIElement {
 		}
 	}
 
+	override setReadOnly(readOnly: boolean) {
+		// Does not have any effect there
+	}
+
 	addRGBWColorPicker(name: string, colorChannels: ColorChannels) : UIColorSelector {
 		const colorSelector = new UIColorSelector(name, this, colorChannels);
 		this._addChildElement(colorSelector);
@@ -197,6 +201,23 @@ class UIGroupElement extends AUIElement {
 		}
 
 		return false;
+	}
+
+	override getByPath(path: string[]) : AUIElement | null {
+		if (super.getByPath(path) !== null)
+			return this;
+
+		if (path.length >= 2 && path[0] === this.getName()) {
+			let child = this.getChildByName(path[1]);
+
+			if (child) {
+				let subPath = [...path].splice(1);
+
+				return child.getByPath(subPath);
+			}
+		}
+
+		return null;
 	}
 
 	removeChildByName(name: string) : boolean {

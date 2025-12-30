@@ -28,4 +28,8 @@ class UIButtonElement extends AUIElement {
 	override setDisabled(disabled: boolean) {
 		this.button.disabled = disabled;
 	}
+
+	override setReadOnly(readOnly: boolean) {
+		this.button.disabled = readOnly;
+	}
 }

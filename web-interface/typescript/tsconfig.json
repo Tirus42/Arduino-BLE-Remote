@@ -69,6 +69,7 @@
 
     // UI code
     "UIElement/UIElementType.ts",
+    "UIElement/UIFlagType.ts",
     "UIElement/ValueWrapper.ts",
 
     "UIElement/AUIElement.ts",

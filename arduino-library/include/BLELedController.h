@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceType.h"
+#include "GUIFlag.h"
 
 #include <RGBW.h>
 #include <ColorChannels.h>
@@ -82,6 +83,13 @@ class BLELedController {
 		 * \returns true on success, false when the path was not valid.
 		 */
 		bool notifyGUIValueChange(const std::vector<std::string>& path);
+
+		/**
+		 * Changes a flag on a GUI element specified by the path.
+		 * Also sends a update to the clients when the value actually changed.
+		 * \returns true on success, false when the path was not valid.
+		 */
+		bool setGUIElementFlag(const std::vector<std::string>& path, webgui::GUIFlag flag, bool newState);
 
 		[[deprecated("Not required anymore, will be removed in a future version.")]]
 		void update();

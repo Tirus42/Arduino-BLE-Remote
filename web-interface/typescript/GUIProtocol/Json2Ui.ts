@@ -2,6 +2,7 @@ interface ADataJSON {
 	type: string;
 	name: string;
 	advanced: boolean | undefined;
+	readOnly: boolean | undefined;
 }
 
 interface RootDataJSON extends ADataJSON {
@@ -32,9 +33,7 @@ interface DropDownJSON extends NumberValueJSON {
 	items: string[];
 }
 
-interface NumberFieldJSON extends NumberValueJSON {
-	readOnly: boolean;
-}
+interface NumberFieldJSON extends NumberValueJSON {}
 
 interface TextFieldJSON extends ADataJSON {
 	value: string;
@@ -132,9 +131,8 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 		case 'numberfield_int32': {
 			const numberFieldNode = <NumberFieldJSON>(jsonNode);
 			const jValue = numberFieldNode.value;
-			const jReadOnly = numberFieldNode.readOnly;
 
-			createdElement = currentRoot.addNumberFieldInt32(jName, jValue).setReadOnly(jReadOnly);
+			createdElement = currentRoot.addNumberFieldInt32(jName, jValue);
 			break;
 		}
 
@@ -186,5 +184,9 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 
 	if (jsonNode.advanced) {
 		createdElement.setAdvanced(jsonNode.advanced);
+	}
+
+	if (jsonNode.readOnly) {
+		createdElement.setReadOnly(jsonNode.readOnly);
 	}
 }

@@ -29,6 +29,23 @@ bool WebGUIHandler::notifyGUIValueChange(const std::vector<std::string>& path) {
 	return true;
 }
 
+bool WebGUIHandler::setGUIElementFlag(const std::vector<std::string>& path, webgui::GUIFlag flag, bool newState) {
+	webgui::IControlElement* elem = guiRoot->getElementByPath(path);
+
+	if (!elem)
+		return false;
+
+	bool prevState = elem->getFlag(flag);
+
+	if (prevState == newState)
+		return true;
+
+	elem->setFlag(flag, newState);
+
+	writeGUIUpdateFlag(BROADCAST_REQUEST_ID, path, flag, newState);
+	return true;
+}
+
 void WebGUIHandler::onWrite(BLECharacteristic* pCharacteristic/*, esp_ble_gatts_cb_param_t* param*/) {
 	handleGUIRequest(*pCharacteristic);
 }
@@ -107,6 +124,18 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 	using ValueType = webgui::ValueType;
 
 	ValueType type = static_cast<ValueType>(content[offset]);
+
+	webgui::IControlElement* elem = guiRoot->getElementByPath(path);
+
+	if (!elem) {
+		Serial.printf("Unable to map GUI element with path '%s', ignoring\n", name.c_str());
+		return;
+	}
+
+	if (elem->getFlag(webgui::GUIFlag::ReadOnly)) {
+		Serial.printf("Ignore update for element '%s' as its set to read only!\n", name.c_str());
+		return;
+	}
 
 	switch (type) {
 		case ValueType::Int32: {
@@ -238,6 +267,20 @@ void WebGUIHandler::writeGUIUpdateValue(uint32_t requestId, const std::string& n
 	}
 
 	writeCharacteristicData(GUIServerHeader::UpdateValue, requestId, MergeVectors(namePart, valuePart));
+}
+
+void WebGUIHandler::writeGUIUpdateFlag(uint32_t requestId, const std::vector<std::string>& path, webgui::GUIFlag flag, bool newState) {
+	writeGUIUpdateFlag(requestId, ConcatPath(path), flag, newState);
+}
+
+void WebGUIHandler::writeGUIUpdateFlag(uint32_t requestId, const std::string& name, webgui::GUIFlag flag, bool newState) {
+	std::vector<uint8_t> namePart = StringToLengthPrefixedVector(name);
+	std::vector<uint8_t> valuePart(2);
+
+	valuePart[0] = static_cast<uint8_t>(flag);
+	valuePart[1] = newState;
+
+	writeCharacteristicData(GUIServerHeader::UpdateFlag, requestId, MergeVectors(namePart, valuePart));
 }
 
 void WebGUIHandler::writeCharacteristicData(GUIServerHeader headByte, uint32_t requestId, const std::vector<uint8_t>& data) {

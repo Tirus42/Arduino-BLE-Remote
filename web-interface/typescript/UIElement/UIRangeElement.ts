@@ -34,6 +34,11 @@ class UIRangeElement extends AUIElement {
 		return this.container;
 	}
 
+	override setReadOnly(readOnly: boolean) {
+		this.range.readOnly = readOnly;
+		this.range.disabled = readOnly;
+	}
+
 	setValue(newValue: number) {
 		if (newValue > this.maxValue || newValue < this.minValue) {
 			throw "Invalid new value, out of bounds of range [" + this.minValue + ", " + this.maxValue + "].";

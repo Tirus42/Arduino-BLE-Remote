@@ -59,6 +59,12 @@ class UIRadioElement extends AUISelectorElement {
 		}
 	}
 
+	override setReadOnly(readOnly: boolean) {
+		for (let i = 0; i < this.options.length; ++i) {
+			this.options[i].disabled = readOnly;
+		}
+	}
+
 	override onInputValueChange() {
 		for (let i = 0; i < this.options.length; ++i) {
 			if (this.options[i].checked) {

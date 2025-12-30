@@ -180,6 +180,10 @@ class UIColorSelector extends AUIElement {
 		this.btnScaleToMax.disabled = readOnly;
 	}
 
+	override setReadOnly(readOnly: boolean) {
+		this.setDisabled(readOnly);
+	}
+
 	onColorChange(newColor: IColor) {
 		// Update all elements
 		this.setValue(newColor);

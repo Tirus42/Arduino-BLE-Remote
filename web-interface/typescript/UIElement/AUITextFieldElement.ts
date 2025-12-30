@@ -45,6 +45,10 @@ abstract class AUITextFieldElement extends AUIElement {
 		this.textField.disabled = disabled;
 	}
 
+	override setReadOnly(readOnly: boolean) {
+		this.textField.readOnly = readOnly;
+	}
+
 	setValue(newValue: string) {
 		this.textField.value = newValue;
 	}

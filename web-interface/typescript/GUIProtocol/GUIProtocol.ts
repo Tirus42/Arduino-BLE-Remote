@@ -6,21 +6,24 @@ enum GUIClientHeader {
 enum GUIServerHeader {
 	GUIData = 0x00,
 	UpdateValue = 0x01,
+	UpdateFlag = 0x02,
 }
 
 class GUIProtocolHandler {
 	characteristic: BluetoothRemoteGATTCharacteristic;
 	onGuiJsonCallback: (json: ADataJSON) => void;
 	onValueUpdateCallback: (path: string[], newValue: ValueWrapper) => void;
+	onFlagUpdateCallback: (path: string[], flag: UIFlagType, newState: boolean) => void;
 	dataWriter: BLEDataWriter;
 	onCharacteristicChanged: (event: Event) => void;
 	recvPendingData : BLEDataReader | undefined;
 	pendingRequestIds: Set<number>;
 
-	constructor(characteristic: BluetoothRemoteGATTCharacteristic, onGuiJsonCallback: (json: ADataJSON) => void, onValueUpdateCallback: (path: string[], newValue: ValueWrapper) => void) {
+	constructor(characteristic: BluetoothRemoteGATTCharacteristic, onGuiJsonCallback: (json: ADataJSON) => void, onValueUpdateCallback: (path: string[], newValue: ValueWrapper) => void, onFlagUpdateCallback: (path: string[], flag: UIFlagType, newState: boolean) => void) {
 		this.characteristic = characteristic;
 		this.onGuiJsonCallback = onGuiJsonCallback;
 		this.onValueUpdateCallback = onValueUpdateCallback;
+		this.onFlagUpdateCallback = onFlagUpdateCallback;
 		this.dataWriter = new BLEDataWriter(characteristic);
 		this.onCharacteristicChanged = (event: Event) => {this._onCharacteristicChanged(event);};
 		this.pendingRequestIds = new Set();
@@ -96,6 +99,10 @@ class GUIProtocolHandler {
 				this._handlePacket_UpdateValue(content);
 				break;
 			}
+			case GUIServerHeader.UpdateFlag: {
+				this._handlePacket_UpdateFlag(content);
+				break;
+			}
 			default:
 				Log("Reveived unknown data for the GUI!, packet id: " + data[0]);
 		}
@@ -153,6 +160,30 @@ class GUIProtocolHandler {
 			this.onValueUpdateCallback(key.split(','), value);
 		} catch (err) {
 			Log("Error during UpdateValue packet: " + err);
+		}
+	}
+
+	private _handlePacket_UpdateFlag(content: DataView) {
+		const reader : NetworkBufferReader = new NetworkBufferReader(content);
+
+		const requestId = reader.extractUint32();
+		const length = reader.extractUint32();
+
+		const isOwnRequest : boolean = this.pendingRequestIds.has(requestId);
+
+		if (isOwnRequest) {
+			// We don't need to handle our own value updates, ignore them
+			return;
+		}
+
+		const key = reader.extractString();
+		const flag : UIFlagType = reader.extractUint8();
+		const newState : boolean = reader.extractUint8() > 0;
+
+		try {
+			this.onFlagUpdateCallback(key.split(','), flag, newState);
+		} catch (err) {
+			Log("Error during UpdateFlag packet: " + err);
 		}
 	}
 

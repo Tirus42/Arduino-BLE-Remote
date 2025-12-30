@@ -68,6 +68,10 @@ class UICompassElement extends AUIElement {
 	}
 
 	override setDisabled(disabled: boolean) {
-		// Compas is only a output element
+		// Compass is only a output element
+	}
+
+	override setReadOnly(readOnly: boolean) {
+		// Compass is only a output element
 	}
 }

@@ -15,6 +15,7 @@ enum class GUIClientHeader : uint8_t {
 enum class GUIServerHeader : uint8_t {
 	GUIData = 0x00,
 	UpdateValue = 0x01,
+	UpdateFlag = 0x02,
 };
 
 static constexpr uint32_t BROADCAST_REQUEST_ID = 0xFFFFFFFF;

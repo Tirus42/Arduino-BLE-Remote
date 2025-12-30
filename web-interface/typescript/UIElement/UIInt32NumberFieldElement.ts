@@ -51,11 +51,9 @@ class UIInt32NumberFieldElement extends AUIElement {
 		this.setValue(newValue.getNumberValue());
 	}
 
-	setReadOnly(readOnly: boolean) : UIInt32NumberFieldElement {
+	override setReadOnly(readOnly: boolean) {
 		this.numberField.readOnly = readOnly;
 		this.numberField.disabled = readOnly;
-
-		return this;
 	}
 
 	override setDisabled(disabled: boolean) {

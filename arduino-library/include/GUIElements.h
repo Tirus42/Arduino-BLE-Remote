@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GUIFlag.h"
+
 #include "Literals.h"
 #include "ValueWrapper.h"
 #include "DataHandler.h"
@@ -40,6 +42,11 @@ struct IControlElement {
 	 * Sets a new value to the element and invoces the callback handling.
 	 */
 	virtual bool setValue(const std::vector<std::string>& path, const AValueWrapper& newValue) = 0;
+
+	virtual bool getFlag(GUIFlag flag) const = 0;
+	virtual void setFlag(GUIFlag flag, bool newValue) = 0;
+
+	virtual IControlElement* getElementByPath(const std::vector<std::string>& path) = 0;
 };
 
 template <typename Derived>
@@ -47,11 +54,13 @@ struct AControlElement : public IControlElement {
 	std::string name;
 
 	bool isAdvanced:1;
+	bool isReadOnly:1;
 
 	AControlElement(const std::string& name) :
 		IControlElement(),
 		name(name),
-		isAdvanced(false) {}
+		isAdvanced(false),
+		isReadOnly(false) {}
 
 	AControlElement(const AControlElement&) = delete;
 	AControlElement& operator=(const AControlElement&) = delete;
@@ -67,6 +76,10 @@ struct AControlElement : public IControlElement {
 
 		if (isAdvanced) {
 			prefix += ',' + jsonField("advanced", true);
+		}
+
+		if (isReadOnly) {
+			prefix += ',' + jsonField("readOnly", true);
 		}
 
 		return prefix;
@@ -121,6 +134,40 @@ struct AControlElement : public IControlElement {
 	Derived* setAdvanced(bool advanced = true) {
 		this->isAdvanced = advanced;
 		return static_cast<Derived*>(this);
+	}
+
+	Derived* setReadOnly(bool readOnly = true) {
+		this->isReadOnly = readOnly;
+		return static_cast<Derived*>(this);
+	}
+
+	virtual bool getFlag(GUIFlag flag) const override {
+		switch (flag) {
+			case GUIFlag::Advanced:
+				return isAdvanced;
+			case GUIFlag::ReadOnly:
+				return isReadOnly;
+		}
+
+		return false;	// Should be impossible to reach
+	}
+
+	virtual void setFlag(GUIFlag flag, bool newState) override {
+		switch (flag) {
+			case GUIFlag::Advanced:
+				setAdvanced(newState);
+				break;
+			case GUIFlag::ReadOnly:
+				 setReadOnly(newState);
+				 break;
+		}
+	}
+
+	virtual IControlElement* getElementByPath(const std::vector<std::string>& path) override {
+		if (path.size() == 1 && path[0] == this->name)
+			return this;
+
+		return nullptr;
 	}
 };
 
@@ -336,16 +383,11 @@ struct NumberFieldInt32Element : public AControlElementWithParentAndValue<IInt32
 	}
 
 	virtual std::string toJSON() const override {
-		return jsonPrefix() + ","_s + jsonValueField(dataHandler ? dataHandler->getValue() : 0) + "," + jsonField("readOnly", readOnly) + "}"_s;
+		return jsonPrefix() + ","_s + jsonValueField(dataHandler ? dataHandler->getValue() : 0) + "}"_s;
 	}
 
 	virtual void setValue(const AValueWrapper& newValue) override {
 		this->dataHandler->setValue(newValue.getAsInt32());
-	}
-
-	virtual NumberFieldInt32Element* setReadOnly(bool readOnly = true) {
-		this->readOnly = readOnly;
-		return this;
 	}
 };
 
@@ -603,6 +645,24 @@ struct GroupElement : public AControlElementWithParent<GroupElement> {
 
 		return false;
 	}
+
+	virtual IControlElement* getElementByPath(const std::vector<std::string>& path) override {
+		if (AControlElement::getElementByPath(path))
+			return this;
+
+		if (path.size() > 1) {
+			std::vector<std::string> pathWithoutGroup = {path.begin() + 1, path.end()};
+
+			for (auto& element : elements) {
+				IControlElement* result = element->getElementByPath(pathWithoutGroup);
+
+				if (result)
+					return result;
+			}
+		}
+
+		return nullptr;
+	}
 };
 
 /**
@@ -636,6 +696,20 @@ struct RootElement : public GroupElement {
 			return false;
 
 		return _setValueInsideGroup(path, newValue);
+	}
+
+	virtual IControlElement* getElementByPath(const std::vector<std::string>& path) override {
+		if (path.empty())
+			return nullptr;
+
+		for (auto& element : elements) {
+			IControlElement* result = element->getElementByPath(path);
+
+			if (result)
+				return result;
+		}
+
+		return nullptr;
 	}
 };
 
