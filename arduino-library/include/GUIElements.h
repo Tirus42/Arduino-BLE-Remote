@@ -10,6 +10,7 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <optional>
 
 namespace webgui {
 
