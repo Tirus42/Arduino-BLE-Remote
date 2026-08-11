@@ -304,8 +304,8 @@ UUID BLELedController::GenerateUUIDByName(const std::string& name) {
 
 	mbedtls_md5_init(&ctx);
 
-	mbedtls_md5_starts_ret(&ctx);
-	mbedtls_md5_update_ret(&ctx, reinterpret_cast<const uint8_t*>(name.c_str()), name.length());
+	mbedtls_md5_starts(&ctx);
+	mbedtls_md5_update(&ctx, reinterpret_cast<const uint8_t*>(name.c_str()), name.length());
 
 	UUID result;
 
