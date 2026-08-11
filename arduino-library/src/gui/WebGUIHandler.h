@@ -42,6 +42,6 @@ class WebGUIHandler : public BLECharacteristicCallbacks {
 		bool notifyGUIValueChange(const std::vector<std::string>& path);
 		bool setGUIElementFlag(const std::vector<std::string>& path, webgui::GUIFlag flag, bool newState);
 
-		virtual void onWrite(BLECharacteristic* pCharacteristic/*, esp_ble_gatts_cb_param_t* param*/) override;
-		virtual void onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue) override;
+		virtual void onWrite(BLECharacteristic* pCharacteristic, NimBLEConnInfo& /*connInfo*/) override;
+		virtual void onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) override;
 };

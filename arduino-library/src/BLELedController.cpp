@@ -39,7 +39,7 @@ static const BLEUUID LED_INFO_CHARACTERISTIC_UUID("013201e4-0873-4377-8bff-9a238
 static const BLEUUID GUI_CHARACTERISTIC_UUID("013201e4-0873-4377-8bff-9a2389af3884");
 
 struct BLELedController::CharacteristicCallbacks : public BLECharacteristicCallbacks {
-	virtual void onWrite(BLECharacteristic* pCharacteristic/*, esp_ble_gatts_cb_param_t* param*/) override {
+	virtual void onWrite(BLECharacteristic* pCharacteristic, NimBLEConnInfo& /*connInfo*/) override {
 		instance->onCharacteristicWritten(pCharacteristic);
 	}
 } callbackHandler;
@@ -58,14 +58,6 @@ struct BLELedController::LedMappingData {
 		characteristic(pService->createCharacteristic(uuidString->c_str(), NIMBLE_PROPERTY::WRITE)),
 		colorChannels(colorChannels) {}
 };
-
-static std::string BleMacToString(const ble_addr_t& addr) {
-	char buffer[6 * 2 + 5 + 1];
-	snprintf(buffer, sizeof(buffer), "%02X:%02X:%02X:%02X:%02X:%02X",
-	         addr.val[5], addr.val[4], addr.val[3], addr.val[2], addr.val[1], addr.val[0]);
-
-	return std::string(buffer);
-}
 
 struct BLELedController::InternalData : public BLEServerCallbacks {
 	BLEServer* pServer;
@@ -168,20 +160,20 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 		return {};
 	}
 
-	virtual void onConnect(BLEServer* _server, ble_gap_conn_desc* param) override {
+	virtual void onConnect(BLEServer* _server, NimBLEConnInfo& connInfo) override {
 		clientLimit--;
 
-		instance->OnConnect(BleMacToString(param->peer_ota_addr).c_str());
+		instance->OnConnect(connInfo.getAddress().toString().c_str());
 
 		if (clientLimit > 0) {
 			pServer->getAdvertising()->start();
 		}
 	}
 
-	virtual void onDisconnect(BLEServer* _server, ble_gap_conn_desc* param) override {
+	virtual void onDisconnect(BLEServer* _server, NimBLEConnInfo& connInfo, int /*reason*/) override {
 		clientLimit++;
 
-		instance->OnDisconnect(BleMacToString(param->peer_ota_addr).c_str());
+		instance->OnDisconnect(connInfo.getAddress().toString().c_str());
 	}
 };
 
@@ -339,7 +331,7 @@ void BLELedController::onCharacteristicWritten(BLECharacteristic* characteristic
 }
 
 void BLELedController::handleLedInfoRequest(BLECharacteristic& characteristic) {
-	if (characteristic.getDataLength() >= 1 && characteristic.getValue().data()[0] == 0x00) {
+	if (characteristic.getLength() >= 1 && characteristic.getValue().data()[0] == 0x00) {
 		NimBLEAttValue value = characteristic.getValue();
 
 		std::string cmd(value.begin() + 1, value.end());

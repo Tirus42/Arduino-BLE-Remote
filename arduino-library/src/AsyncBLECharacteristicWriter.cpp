@@ -1,5 +1,7 @@
 #include "AsyncBLECharacteristicWriter.h"
 
+#include <Arduino.h>
+
 AsyncBLECharacteristicWriter::AsyncBLECharacteristicWriter(BLECharacteristic* pCharacteristic) :
 	sendQueue(),
 	subscriberHandles(),

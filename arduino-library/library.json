@@ -1,6 +1,6 @@
 {
   "name": "BLE Remote",
-  "version": "0.11.2",
+  "version": "0.12.0",
   "description": "BLE peripheral implementation for remote control of custom defined values.",
   "keywords": "ble, remote, control, led, gui, web-interface",
   "repository":
@@ -18,7 +18,7 @@
   "license": "GPL-3.0-or-later",
   "homepage": "https://github.com/Tirus42/Arduino-BLE-Remote",
   "dependencies": {
-    "h2zero/NimBLE-Arduino": "@^1.4.2",
+    "h2zero/NimBLE-Arduino": "@^2.5.0",
     "tirus/LedControlAndAnimation": "^1.4.7",
     "tirus/UUID": "^1.0.1"
   },

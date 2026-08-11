@@ -46,15 +46,15 @@ bool WebGUIHandler::setGUIElementFlag(const std::vector<std::string>& path, webg
 	return true;
 }
 
-void WebGUIHandler::onWrite(BLECharacteristic* pCharacteristic/*, esp_ble_gatts_cb_param_t* param*/) {
+void WebGUIHandler::onWrite(BLECharacteristic* pCharacteristic, NimBLEConnInfo& /*connInfo*/) {
 	handleGUIRequest(*pCharacteristic);
 }
 
-void WebGUIHandler::onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue) {
+void WebGUIHandler::onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
 	if (pCharacteristic != guiDataSendQueue.getCharacteristic())
 		return;
 
-	uint16_t conHandle = desc->conn_handle;
+	uint16_t conHandle = connInfo.getConnHandle();
 
 	if (subValue == 0) {
 		guiDataSendQueue.removeSubscriber(conHandle);
@@ -72,7 +72,7 @@ NimBLECharacteristic& WebGUIHandler::getCharacteristic() {
 }
 
 void WebGUIHandler::handleGUIRequest(BLECharacteristic& characteristic) {
-	if (characteristic.getDataLength() == 0)
+	if (characteristic.getLength() == 0)
 		return;
 
 	NimBLEAttValue value = characteristic.getValue();
@@ -288,11 +288,6 @@ void WebGUIHandler::writeCharacteristicData(GUIServerHeader headByte, uint32_t r
 }
 
 void WebGUIHandler::writeCharacteristicData(GUIServerHeader headByte, uint32_t requestId, const uint8_t* data, size_t length) {
-	if (getCharacteristic().getSubscribedCount() == 0) {
-		Serial.printf("No characteristic subscribers, ignoring\n");
-		return;
-	}
-
 	std::optional<uint16_t> clientMtu = BLELedController::GetInstance()->getClientsContentMtu();
 
 	if (!clientMtu) {
