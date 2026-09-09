@@ -21,10 +21,10 @@ BLEGUIClient::BLEGUIClient(const BLEAddress& addr) :
 	}
 
 	// Set connection parameters for faster connection
-	pClient->setConnectionParams(12, 12, 0, 51);
+	pClient->setConnectionParams(12, 12, 0, 150);
 
 	// Set timeout to one second
-	pClient->setConnectTimeout(1);
+	pClient->setConnectTimeout(1000);
 
 	Serial.printf("BLEClient: Connecting to device %s ...\n", addr.toString().c_str());
 
