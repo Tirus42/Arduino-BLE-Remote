@@ -39,6 +39,8 @@ class BLELedController {
 		void handleLedInfoRequest(NimBLECharacteristic& characteristic);
 		void writeLedInfoDataV1(NimBLECharacteristic& characteristic) const;
 
+		void setupAndEnableAdvertising();
+
 		static void OnCharacteristicWritten(NimBLECharacteristic* pCharacteristic);
 		static void OnConnect(const char* remoteAddr);
 		static void OnDisconnect(const char* remoteAddr);

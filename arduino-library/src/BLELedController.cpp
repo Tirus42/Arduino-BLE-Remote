@@ -9,6 +9,8 @@
 
 #include "gui/WebGUIHandler.h"
 
+#include "nimble/nimble/host/services/gap/include/services/gap/ble_svc_gap.h"
+
 #include <string.h>	// For memcpy()
 #include <optional>
 
@@ -229,10 +231,7 @@ void BLELedController::begin() {
 
 	internal->pService->start();
 
-	// Start advertising
-	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-	pAdvertising->addServiceUUID(GetServiceUUID(deviceType));
-	internal->pServer->getAdvertising()->start();
+	setupAndEnableAdvertising();
 }
 
 void BLELedController::update() {
@@ -370,6 +369,37 @@ void BLELedController::writeLedInfoDataV1(BLECharacteristic& characteristic) con
 
 		characteristic.notify(buffer, length);
 	}
+}
+
+void BLELedController::setupAndEnableAdvertising() {
+	// Build scan response data to allow long device names
+	std::string fullName = ble_svc_gap_device_name();
+	std::string shortName = fullName.substr(0, 8);
+
+	NimBLEAdvertisementData scanResponseData = NimBLEAdvertisementData{};
+	scanResponseData.setName(fullName);
+
+	NimBLEAdvertisementData advertisementData = NimBLEAdvertisementData{};
+	advertisementData.setFlags(BLE_HS_ADV_F_DISC_GEN);
+
+	advertisementData.addServiceUUID(GetServiceUUID(deviceType));
+
+	// Max short name in the ADV packet: 31 - 3 (flags) - 18 (service UUID) - 2 (AD header) = 8.
+	if (!advertisementData.setShortName(shortName)) {
+		if (errorLogTarget) {
+			errorLogTarget->printf("Failed to add BLE name to advertisement data\n");
+		}
+	}
+
+	NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
+	pAdvertising->enableScanResponse(true);
+	pAdvertising->setAdvertisementData(advertisementData);
+
+	if (scanResponseData.getPayload().size() > 0) {
+		pAdvertising->setScanResponseData(scanResponseData);
+	}
+
+	GetInstance()->internal->pServer->getAdvertising()->start();
 }
 
 void BLELedController::OnCharacteristicWritten(BLECharacteristic* characteristic) {
