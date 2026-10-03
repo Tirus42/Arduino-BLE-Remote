@@ -174,6 +174,8 @@ struct BLELedController::InternalData : public BLEServerCallbacks {
 		clientLimit++;
 
 		instance->OnDisconnect(connInfo.getAddress().toString().c_str());
+
+		pServer->getAdvertising()->start();
 	}
 };
 
