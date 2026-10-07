@@ -20,11 +20,13 @@ class BLEDataWriter {
 	characteristic: BluetoothRemoteGATTCharacteristic;
 	pendingData: PendingDataEntry[];
 	failedRepeatCount: number;
+	isFirstRequest: boolean;
 
 	constructor(characteristic: BluetoothRemoteGATTCharacteristic) {
 		this.characteristic = characteristic;
 		this.pendingData = [];
 		this.failedRepeatCount = 0;
+		this.isFirstRequest = true;
 	}
 
 	sendData(groupName: string, data: Uint8Array) {
@@ -41,39 +43,42 @@ class BLEDataWriter {
 		this.pendingData.push(entry);
 
 		if (noOperationPending) {
-			this._sendData();
+			this._sendPendingData();
 		}
 	}
 
-	private _sendData() {
-		const obj = this;
-		const sendData = this.pendingData[0].data;
+	private _sendPendingData() {
+		if (this.pendingData.length == 0)
+			return;
 
-		const reqSendFunction = function(characteristic: BluetoothRemoteGATTCharacteristic, data: Uint8Array) {
-			characteristic.writeValueWithoutResponse(data).then(_ => {
-				if (obj.pendingData[0].data === sendData) {
-					// Only remove the entry when the content was not replaced in the meantime
-					obj.pendingData.shift();
-				} else {
-					obj._sendData();
-				}
+		const data = this.pendingData[0].data;
 
-			}).catch(_ => {
-				// This is a workaround for android, because most times the first request failes with a "unknown reason"
-				// Also see https://github.com/LedgerHQ/ledgerjs/issues/352
-				Log('BLE send operation failed, repeating ...');
+		// Send the first request using writeValue(), otherwise passkey pairing will not work
+		// as no request will be prompted when using writeValueWithoutResponse().
+		const writeFunction = (this.isFirstRequest ? this.characteristic.writeValue : this.characteristic.writeValueWithoutResponse).bind(this.characteristic);
+		this.isFirstRequest = false;
 
-				obj.failedRepeatCount++;
+		writeFunction(data).then(() => {
+			if (this.pendingData[0].data === data) {
+				// Only remove the entry when the content was not replaced in the meantime
+				this.pendingData.shift();
+			} else {
+				this._sendPendingData();
+			}
 
-				if (obj.failedRepeatCount > 10) {
-					Log('Aborting repeat operation due to 10 failed retries ...');
-					return;
-				}
+		}).catch(() => {
+			// This is a workaround for android, because most times the first request failes with a "unknown reason"
+			// Also see https://github.com/LedgerHQ/ledgerjs/issues/352
+			Log('BLE send operation failed, repeating ...');
 
-				reqSendFunction(characteristic, data);
-			});
-		}
+			this.failedRepeatCount++;
 
-		reqSendFunction(this.characteristic, this.pendingData[0].data);
+			if (this.failedRepeatCount > 10) {
+				Log('Aborting repeat operation due to 10 failed retries ...');
+				return;
+			}
+
+			this._sendPendingData();
+		});
 	}
 }
