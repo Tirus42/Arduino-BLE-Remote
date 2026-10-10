@@ -18,6 +18,20 @@ class NetworkBufferReader {
 		return value;
 	}
 
+	extractInt8() : number {
+		this._checkRange(1);
+		const value = this.dataView.getInt8(this.offset);
+		this.offset += 1;
+		return value;
+	}
+
+	extractUint16() : number {
+		this._checkRange(2);
+		const value = this.dataView.getUint16(this.offset, false);
+		this.offset += 2;
+		return value;
+	}
+
 	extractUint32() : number {
 		this._checkRange(4);
 		const value = this.dataView.getUint32(this.offset, false);

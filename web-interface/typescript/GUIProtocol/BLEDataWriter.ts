@@ -62,7 +62,9 @@ class BLEDataWriter {
 			if (this.pendingData[0].data === data) {
 				// Only remove the entry when the content was not replaced in the meantime
 				this.pendingData.shift();
-			} else {
+			}
+
+			if (this.pendingData.length > 0) {
 				this._sendPendingData();
 			}
 

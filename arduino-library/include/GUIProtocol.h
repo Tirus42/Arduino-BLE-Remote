@@ -8,6 +8,7 @@
 enum class GUIClientHeader : uint8_t {
 	RequestGUI = 0x00,
 	SetValue = 0x01,
+	Ping = 0x02,
 
 	COUNT
 };
@@ -16,6 +17,10 @@ enum class GUIServerHeader : uint8_t {
 	GUIData = 0x00,
 	UpdateValue = 0x01,
 	UpdateFlag = 0x02,
+	// [requestId, rssi, connectionInterval, uptime, freeHeap, heapWatermark]
+	PingResponseWithStatusInfo = 0x03,
+
+	UnknownPacketReceived = 0xFF,
 };
 
 static constexpr uint32_t BROADCAST_REQUEST_ID = 0xFFFFFFFF;
@@ -38,6 +43,10 @@ inline uint8_t PeekUInt8(const void* ptr) {
 
 inline uint32_t PeekUInt32(const void* ptr) {
 	return PeekData<uint32_t>(ptr);
+}
+
+inline void PokeUInt16(void* ptr, uint16_t value) {
+	PokeData(ptr, value);
 }
 
 inline void PokeUInt32(void* ptr, uint32_t value) {

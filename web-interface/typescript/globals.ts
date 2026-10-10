@@ -23,6 +23,8 @@ const CHARACTERISTIC_MODEL_NAME_UUID = "928ec7e1-b867-4b7d-904b-d3b8769a7299";
 const CHARACTERISTIC_LEDINFO_UUID = "013201e4-0873-4377-8bff-9a2389af3883";
 const CHARACTERISTIC_GUI_UUID = "013201e4-0873-4377-8bff-9a2389af3884";
 
+const PING_INTERVAL = 1000;
+
 function IsDeviceAlreadyConnected(device: BluetoothDevice) : boolean {
 	return ConnectedDevices.has(device);
 }
@@ -34,6 +36,11 @@ function GetConfig_ShowSecondaryDevices() : boolean {
 
 function GetConfig_ShowAdvancedFields() : boolean {
 	const checkbox = document.getElementById('config_show_advanced_fields') as HTMLInputElement;
+	return checkbox.checked;
+}
+
+function GetConfig_LogPingDetails() : boolean {
+	const checkbox = document.getElementById('config_log_ping_details') as HTMLInputElement;
 	return checkbox.checked;
 }
 

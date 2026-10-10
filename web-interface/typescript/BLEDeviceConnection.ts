@@ -9,6 +9,10 @@ class BLEDeviceConnection extends UIGroupElement {
 	guiControl: GUIProtocolHandler | undefined;
 	connectingAnimationElement: HTMLDivElement | null;
 
+	pingTimer: number | undefined;
+	pingLabelElement: HTMLLabelElement | null;
+	lastPingData: PingData | null;
+
 	classicCharacteristicMapping: Map<string, BluetoothRemoteGATTCharacteristic>;
 
 	constructor(device: BluetoothDevice, rootDiv: HTMLElement) {
@@ -39,6 +43,8 @@ class BLEDeviceConnection extends UIGroupElement {
 		}
 
 		this.connectingAnimationElement = this._createConnectingAnimation();
+		this.pingLabelElement = null;
+		this.lastPingData = null;
 	}
 
 	override destroy() {
@@ -51,6 +57,8 @@ class BLEDeviceConnection extends UIGroupElement {
 		if (this.device.gatt && this.device.gatt.connected) {
 			this.device.gatt.disconnect();
 		}
+
+		this._stopPing();
 
 		//this.device.forget(); // Not supported on Android
 
@@ -173,6 +181,8 @@ class BLEDeviceConnection extends UIGroupElement {
 
 				// Process received GUI-JSON and construct the GUI controls
 				ProcessJSON(this, json);
+
+				this._startPing();
 			}
 
 			const handleUpdateValueFunction = (path: string[], newValue: ValueWrapper) => {
@@ -192,7 +202,7 @@ class BLEDeviceConnection extends UIGroupElement {
 				targetElem.setFlag(flag, newState);
 			}
 
-			this.guiControl = new GUIProtocolHandler(characteristic, handleJsonFunction, handleUpdateValueFunction, handleFlagUpdateFunction);
+			this.guiControl = new GUIProtocolHandler(characteristic, handleJsonFunction, handleUpdateValueFunction, handleFlagUpdateFunction, this._handlePingResponse.bind(this));
 		}
 	}
 
@@ -262,6 +272,52 @@ class BLEDeviceConnection extends UIGroupElement {
 				this._addRGBWCharacteristicElement(name, c, colors);
 			});
 		}
+	}
+
+	private _handlePingResponse(data: PingResposeData) {
+		const time = Math.round(this.lastPingData ? (performance.now() - this.lastPingData.sendTime) : -1);
+
+		if (!this.pingLabelElement) {
+			this.pingLabelElement = HTML.CreateLabelElement();
+			this.addToGroupHeader(this.pingLabelElement);
+		}
+
+		this.pingLabelElement.innerText = ("rssi: " + data.rssi + " dBm, ping: " + time + " ms");
+
+		if (GetConfig_LogPingDetails()) {
+			const uptimeDate = new Date(0);
+			uptimeDate.setSeconds(data.uptime / 1000);
+			const uptimeText = uptimeDate.toISOString().substring(11, 19);
+			const freeHeapKiB = Math.round(data.freeHeap / 1024);
+			const minFreeHeapKiB = Math.round(data.minFreeHeap / 1024);
+
+			Log("Ping resp. data: rssi: " + data.rssi + ", conInterval: " + data.connectionIntervalMs + " ms, uptime: " + uptimeText + ", freeHeap: " + freeHeapKiB + " KiB, minFreeHeap: " + minFreeHeapKiB + " KiB");
+		}
+	}
+
+	private _startPing() {
+		this.pingTimer = setInterval(async() => {
+			if (!this.pingLabelElement && this.lastPingData) {
+				// First ping did not respond.
+				// Probably a library version without ping support.
+				// Stop pinging
+				Log("Ping seems not to be supported from this device.");
+				this._stopPing();
+				//return;
+			}
+
+			const requestId = this.guiControl?.sendPing();
+
+			if (requestId) {
+				this.lastPingData = new PingData(requestId, performance.now());
+			}
+
+		}, PING_INTERVAL);
+	}
+
+	private _stopPing() {
+		clearInterval(this.pingTimer);
+		this.pingTimer = undefined;
 	}
 
 	private _handleKnownNameCharacteristic(characteristic: BluetoothRemoteGATTCharacteristic) : boolean {

@@ -46,8 +46,8 @@ bool WebGUIHandler::setGUIElementFlag(const std::vector<std::string>& path, webg
 	return true;
 }
 
-void WebGUIHandler::onWrite(BLECharacteristic* pCharacteristic, NimBLEConnInfo& /*connInfo*/) {
-	handleGUIRequest(*pCharacteristic);
+void WebGUIHandler::onWrite(BLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
+	handleGUIRequest(connInfo, *pCharacteristic);
 }
 
 void WebGUIHandler::onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) {
@@ -71,7 +71,7 @@ NimBLECharacteristic& WebGUIHandler::getCharacteristic() {
 	return *guiDataSendQueue.getCharacteristic();
 }
 
-void WebGUIHandler::handleGUIRequest(BLECharacteristic& characteristic) {
+void WebGUIHandler::handleGUIRequest(const NimBLEConnInfo& connInfo, BLECharacteristic& characteristic) {
 	if (characteristic.getLength() == 0)
 		return;
 
@@ -95,8 +95,15 @@ void WebGUIHandler::handleGUIRequest(BLECharacteristic& characteristic) {
 			break;
 		}
 
+		case GUIClientHeader::Ping: {
+			handlePingRequest(connInfo, characteristic, requestId);
+			break;
+		}
+
 		default: {
+			handleUnknownPacket(connInfo, characteristic, requestId);
 			Serial.printf("Unhandled client request with head byte: %u\n", headByte);
+			break;
 		}
 	}
 }
@@ -209,6 +216,48 @@ void WebGUIHandler::handleGUISetValueRequest(uint32_t requestId, const std::vect
 			Serial.printf("Unhandled value data type: %" PRIu32 "\n", uint32_t(type));
 			return;
 	}
+}
+
+void WebGUIHandler::handlePingRequest(const NimBLEConnInfo& connInfo, BLECharacteristic& characteristic, uint32_t requestId) {
+	int8_t rssi;
+	uint16_t connectionInterval = connInfo.getConnInterval();
+
+	if (ble_gap_conn_rssi(connInfo.getConnHandle(), &rssi) != 0) {
+		Serial.printf("Error getting connection rssi\n");
+		return;
+	}
+
+	struct __attribute__((packed)) Packet {
+		uint8_t header;
+		uint32_t requestId;
+		int8_t rssi;
+		uint16_t connectionInterval;
+		uint32_t uptime;
+		uint32_t freeHeap;
+		uint32_t minFreeHeap;
+	} packet;
+
+	packet.header = static_cast<uint8_t>(GUIServerHeader::PingResponseWithStatusInfo);
+	packet.requestId = htonl(requestId);
+	packet.rssi = rssi;
+	packet.connectionInterval = htons(connectionInterval);
+	packet.uptime = htonl(millis());
+	packet.freeHeap = htonl(ESP.getFreeHeap());
+	packet.minFreeHeap = htonl(ESP.getMinFreeHeap());
+
+	writeCharacteristicData(reinterpret_cast<const uint8_t*>(&packet), sizeof(packet));
+}
+
+void WebGUIHandler::handleUnknownPacket(const NimBLEConnInfo& /*connInfo*/, BLECharacteristic& /*characteristic*/, uint32_t requestId) {
+	struct __attribute__((packed)) Packet {
+		uint8_t header;
+		uint32_t requestId;
+	} packet;
+
+	packet.header = static_cast<uint8_t>(GUIServerHeader::UnknownPacketReceived);
+	packet.requestId = htonl(requestId);
+
+	writeCharacteristicData(reinterpret_cast<const uint8_t*>(&packet), sizeof(packet));
 }
 
 void WebGUIHandler::writeGUIInfoDataV1(uint32_t requestId) {
@@ -326,6 +375,10 @@ void WebGUIHandler::writeCharacteristicData(GUIServerHeader headByte, uint32_t r
 		guiDataSendQueue.append(data + offset, blockSize);
 		offset += blockSize;
 	}
+}
+
+void WebGUIHandler::writeCharacteristicData(const uint8_t* data, size_t length) {
+	guiDataSendQueue.append(data, length);
 }
 
 std::string WebGUIHandler::ConcatPath(const std::vector<std::string>& path) {

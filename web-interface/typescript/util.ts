@@ -58,6 +58,11 @@ function MemCpy(target: Uint8Array, targetOffset: number, source: Uint8Array, so
 	}
 }
 
+function RoundToDigits(value: number, digits: number) : number {
+	const f = 10 ** digits;
+	return Math.round(value * f) / f;
+}
+
 function ReloadPageAndDropWebWorkerCache() {
 	if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
 		navigator.serviceWorker.controller.postMessage('clearCacheAndReload');

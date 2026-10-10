@@ -1,12 +1,23 @@
 enum GUIClientHeader {
 	RequestGUI = 0x00,
 	SetValue = 0x01,
+	Ping = 0x02,
 }
 
 enum GUIServerHeader {
 	GUIData = 0x00,
 	UpdateValue = 0x01,
 	UpdateFlag = 0x02,
+	PingResponseWithConnectionInfo = 0x03,
+}
+
+interface PingResposeData {
+	requestId: number;
+	rssi: number;
+	connectionIntervalMs: number;
+	uptime: number;
+	freeHeap: number;
+	minFreeHeap: number;
 }
 
 class GUIProtocolHandler {
@@ -14,16 +25,18 @@ class GUIProtocolHandler {
 	onGuiJsonCallback: (json: ADataJSON) => void;
 	onValueUpdateCallback: (path: string[], newValue: ValueWrapper) => void;
 	onFlagUpdateCallback: (path: string[], flag: UIFlagType, newState: boolean) => void;
+	onPingResponseCallback: (data: PingResposeData) => void;
 	dataWriter: BLEDataWriter;
 	onCharacteristicChanged: (event: Event) => void;
 	recvPendingData : BLEDataReader | undefined;
 	pendingRequestIds: Set<number>;
 
-	constructor(characteristic: BluetoothRemoteGATTCharacteristic, onGuiJsonCallback: (json: ADataJSON) => void, onValueUpdateCallback: (path: string[], newValue: ValueWrapper) => void, onFlagUpdateCallback: (path: string[], flag: UIFlagType, newState: boolean) => void) {
+	constructor(characteristic: BluetoothRemoteGATTCharacteristic, onGuiJsonCallback: (json: ADataJSON) => void, onValueUpdateCallback: (path: string[], newValue: ValueWrapper) => void, onFlagUpdateCallback: (path: string[], flag: UIFlagType, newState: boolean) => void, onPingResponseCallback: (data: PingResposeData) => void) {
 		this.characteristic = characteristic;
 		this.onGuiJsonCallback = onGuiJsonCallback;
 		this.onValueUpdateCallback = onValueUpdateCallback;
 		this.onFlagUpdateCallback = onFlagUpdateCallback;
+		this.onPingResponseCallback = onPingResponseCallback;
 		this.dataWriter = new BLEDataWriter(characteristic);
 		this.onCharacteristicChanged = (event: Event) => {this._onCharacteristicChanged(event);};
 		this.pendingRequestIds = new Set();
@@ -55,6 +68,14 @@ class GUIProtocolHandler {
 		const packet = MergeUint8Arrays3(head, name, value);
 
 		this.dataWriter.sendData(absoluteName.toString(), packet);
+	}
+
+	sendPing(): number {
+		const requestId = this._generateRequestId();
+		const packet = PacketBuilder.CreatePacketHeader(GUIClientHeader.Ping, requestId);
+
+		this.dataWriter.sendData("ping", packet);
+		return requestId;
 	}
 
 	private _generateRequestId() : number {
@@ -101,6 +122,10 @@ class GUIProtocolHandler {
 			}
 			case GUIServerHeader.UpdateFlag: {
 				this._handlePacket_UpdateFlag(content);
+				break;
+			}
+			case GUIServerHeader.PingResponseWithConnectionInfo: {
+				this._handlePacket_PingResponseWithConnectionInfo(content);
 				break;
 			}
 			default:
@@ -185,6 +210,29 @@ class GUIProtocolHandler {
 		} catch (err) {
 			Log("Error during UpdateFlag packet: " + err);
 		}
+	}
+
+	private _handlePacket_PingResponseWithConnectionInfo(content: DataView) {
+		const reader : NetworkBufferReader = new NetworkBufferReader(content);
+		const requestId = reader.extractUint32();
+
+		const isOwnRequest : boolean = this.pendingRequestIds.has(requestId);
+
+		if (!isOwnRequest) {
+			// Possible ping from another client, ignore it
+			return
+		}
+
+		const data = {
+			requestId: requestId,
+			rssi: reader.extractInt8(),
+			connectionIntervalMs: reader.extractUint16() / 1.25,
+			uptime: reader.extractUint32(),
+			freeHeap: reader.extractUint32(),
+			minFreeHeap: reader.extractUint32(),
+		};
+
+		this.onPingResponseCallback(data);
 	}
 
 	private _readDataValue(reader : NetworkBufferReader) : ValueWrapper {

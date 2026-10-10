@@ -13,8 +13,10 @@ class WebGUIHandler : public BLECharacteristicCallbacks {
 
 		NimBLECharacteristic& getCharacteristic();
 
-		void handleGUIRequest(BLECharacteristic& characteristic);
+		void handleGUIRequest(const NimBLEConnInfo& connInfo, BLECharacteristic& characteristic);
 		void handleGUISetValueRequest(uint32_t requestId, const std::vector<uint8_t>& content);
+		void handlePingRequest(const NimBLEConnInfo& connInfo, BLECharacteristic& characteristic, uint32_t requestId);
+		void handleUnknownPacket(const NimBLEConnInfo& connInfo, BLECharacteristic& characteristic, uint32_t requestId);
 
 		void writeGUIInfoDataV1(uint32_t requestId);
 		void writeGUIUpdateValue(uint32_t requestId, const std::vector<std::string>& path, const webgui::AValueWrapper& value);
@@ -30,6 +32,8 @@ class WebGUIHandler : public BLECharacteristicCallbacks {
 		void writeCharacteristicData(GUIServerHeader headByte, uint32_t requestId, const std::vector<uint8_t>& data);
 		void writeCharacteristicData(GUIServerHeader headByte, uint32_t requestId, const uint8_t* data, size_t length);
 
+		void writeCharacteristicData(const uint8_t* ptr, size_t length);
+
 		/**
 		 * Concats the given path into the string representation.
 		 */
@@ -42,6 +46,6 @@ class WebGUIHandler : public BLECharacteristicCallbacks {
 		bool notifyGUIValueChange(const std::vector<std::string>& path);
 		bool setGUIElementFlag(const std::vector<std::string>& path, webgui::GUIFlag flag, bool newState);
 
-		virtual void onWrite(BLECharacteristic* pCharacteristic, NimBLEConnInfo& /*connInfo*/) override;
+		virtual void onWrite(BLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
 		virtual void onSubscribe(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo, uint16_t subValue) override;
 };
