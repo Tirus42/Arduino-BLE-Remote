@@ -35,3 +35,18 @@ Currently the following control elements are implemented:
 * RGBW color selector
 
 See [here](https://tirus.mine.nu/ble/?test=true) for a demo of all control elements.
+
+
+# Changelog
+* 0.13.0
+    * New feature: Ping packet with runtime information from the ESP
+    * This includes the signal strength, uptime and free memory
+    * The WebUI shows this on the connected device when supported by the ESP32 library part
+* 0.12.3
+    * Fixed BLE advertising did not contain the device name properly
+* 0.12.2
+    * Fixed not enabling the BLE advertising again when the client limit once was reached
+* 0.12.1
+    * Fixed ESP32 client implementation connection timeout problems
+* 0.12.0
+    * Migrated to NimBLE-Arduino >= 2.5.0 form 1.x
