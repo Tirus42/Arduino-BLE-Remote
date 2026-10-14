@@ -31,6 +31,7 @@ class HTML {
 		elem.min = '' + min;
 		elem.max = '' + max;
 		elem.value = '' + value;
+		this.AddScrollEventToRangeElement(elem);
 		return elem;
 	}
 
@@ -128,5 +129,27 @@ class HTML {
 		let element = document.createElement('h' + headerNumber);
 		element.innerText = text;
 		return element;
+	}
+
+	static AddScrollEventToRangeElement(elem: HTMLInputElement) {
+		elem.onwheel = (e: WheelEvent) => {
+			e.preventDefault();
+			let value = parseFloat(elem.value);
+			const min = parseFloat(elem.min);
+			const max = parseFloat(elem.max);
+
+			const range = max - min;
+			let step = range / 100;
+
+			if (step < 1) {
+				step = 1;
+			}
+
+			value += e.deltaY < 0 ? step : -step;
+
+			value = Math.max(min, Math.min(max, value));
+			elem.value = '' + value;
+			elem.dispatchEvent(new Event('input'));
+		}
 	}
 }

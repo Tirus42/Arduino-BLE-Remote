@@ -19,6 +19,7 @@ function CreateRangeSlider(id: string, title: string, onColorChangeFunction: () 
 	element.oninput = () => {
 		onColorChangeFunction();
 	}
+	HTML.AddScrollEventToRangeElement(element);
 
 	const text = HTML.CreateSpanElement(title);
 
