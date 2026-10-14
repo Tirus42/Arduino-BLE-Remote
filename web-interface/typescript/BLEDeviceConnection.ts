@@ -13,6 +13,8 @@ class BLEDeviceConnection extends UIGroupElement {
 	pingLabelElement: HTMLLabelElement | null;
 	lastPingData: PingData | null;
 
+	failedNotificationListenCount: number = 0;
+
 	classicCharacteristicMapping: Map<string, BluetoothRemoteGATTCharacteristic>;
 
 	constructor(device: BluetoothDevice, rootDiv: HTMLElement) {
@@ -223,6 +225,14 @@ class BLEDeviceConnection extends UIGroupElement {
 				reqSendFunction(characteristic, 'list');
 			})
 			.catch((err) => {
+				this.failedNotificationListenCount++;
+
+				if (this.failedNotificationListenCount > 10) {
+					Log("Error: startNotifications() failed 10 times, abort connection");
+					this.disconnect();
+					return;
+				}
+
 				Log("Error in startNotifications(): " + err + "; Repeating ...");
 				startNotificationFunction();
 			});

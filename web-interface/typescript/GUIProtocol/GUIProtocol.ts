@@ -30,6 +30,7 @@ class GUIProtocolHandler {
 	onCharacteristicChanged: (event: Event) => void;
 	recvPendingData : BLEDataReader | undefined;
 	pendingRequestIds: Set<number>;
+	failedNotificationListenCount: number = 0;
 
 	constructor(characteristic: BluetoothRemoteGATTCharacteristic, onGuiJsonCallback: (json: ADataJSON) => void, onValueUpdateCallback: (path: string[], newValue: ValueWrapper) => void, onFlagUpdateCallback: (path: string[], flag: UIFlagType, newState: boolean) => void, onPingResponseCallback: (data: PingResposeData) => void) {
 		this.characteristic = characteristic;
@@ -48,6 +49,13 @@ class GUIProtocolHandler {
 				this._requestGUI();
 			})
 			.catch((err) => {
+				this.failedNotificationListenCount++;
+
+				if (this.failedNotificationListenCount > 10) {
+					Log("Error: startNotifications() failed 10 times, aborting");
+					throw "Error: startNotifications() failed 10 times, aborting";
+				}
+
 				Log("Error in startNotifications(): " + err + "; Repeating ...");
 				startNotificationFunction();
 			});
