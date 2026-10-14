@@ -98,6 +98,7 @@ function HandleSettingsOverlayClick(event: MouseEvent) {
 
 function Init() {
 	LogClear();
+	Config.Init();
 
 	if (!navigator.bluetooth) {
 		Log("Sorry, your browser does not support web bluetooth.");
