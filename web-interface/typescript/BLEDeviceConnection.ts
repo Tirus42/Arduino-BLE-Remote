@@ -284,7 +284,7 @@ class BLEDeviceConnection extends UIGroupElement {
 
 		this.pingLabelElement.innerText = ("rssi: " + data.rssi + " dBm, ping: " + time + " ms");
 
-		if (GetConfig_LogPingDetails()) {
+		if (Config.GetLogPingDetails()) {
 			const uptimeDate = new Date(0);
 			uptimeDate.setSeconds(data.uptime / 1000);
 			const uptimeText = uptimeDate.toISOString().substring(11, 19);

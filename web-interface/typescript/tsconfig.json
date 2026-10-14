@@ -102,6 +102,7 @@
 	"color.ts",
 	"PingData.ts",
 	"html.ts",
+	"config.ts",
     "main.ts"
   ],
   "references": [

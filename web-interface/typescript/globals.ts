@@ -29,29 +29,10 @@ function IsDeviceAlreadyConnected(device: BluetoothDevice) : boolean {
 	return ConnectedDevices.has(device);
 }
 
-function GetConfig_ShowSecondaryDevices() : boolean {
-	const checkbox = document.getElementById('config_show_secondary_devices') as HTMLInputElement;
-	return checkbox.checked;
-}
-
-function GetConfig_ShowAdvancedFields() : boolean {
-	const checkbox = document.getElementById('config_show_advanced_fields') as HTMLInputElement;
-	return checkbox.checked;
-}
-
-function GetConfig_LogPingDetails() : boolean {
-	const checkbox = document.getElementById('config_log_ping_details') as HTMLInputElement;
-	return checkbox.checked;
-}
-
-function OnConfigChange_ShowAdvancedFields() {
-	AUIElement.notifyConfigChanges();
-}
-
 function GetBLEServicesArray() : string[] {
 	let result = [SERVICE_PRIMARY_UUID];
 
-	if (GetConfig_ShowSecondaryDevices()) {
+	if (Config.GetShowSecondaryDevices()) {
 		result.push(SERVICE_SECONDARY_UUID);
 	}
 
@@ -63,7 +44,7 @@ function GetBLEServicesArray() : string[] {
 function GetBLEServiceFilter() {
 	let result = [{services: [SERVICE_PRIMARY_UUID]}];
 
-	if (GetConfig_ShowSecondaryDevices()) {
+	if (Config.GetShowSecondaryDevices()) {
 		result.push({services: [SERVICE_SECONDARY_UUID]});
 	}
 

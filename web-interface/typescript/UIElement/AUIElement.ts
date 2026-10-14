@@ -49,11 +49,11 @@ abstract class AUIElement {
 	setAdvanced(advanced: boolean) : void {
 		this.advanced = advanced;
 
-		if (advanced && !GetConfig_ShowAdvancedFields()) {
+		if (advanced && !Config.GetShowAdvancedFields()) {
 			this.setHidden(true);
 		}
 
-		if (!advanced || GetConfig_ShowAdvancedFields()) {
+		if (!advanced || Config.GetShowAdvancedFields()) {
 			this.setHidden(false);
 		}
 	}
