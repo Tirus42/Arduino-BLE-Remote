@@ -28,6 +28,7 @@ div.sliderexpandable > div.span {
     height:0;
 }
 
+button.control-button,
 div.bevel > div > div.check,
 div.bevel > div > div.range,
 div.bevel > div > div.select,

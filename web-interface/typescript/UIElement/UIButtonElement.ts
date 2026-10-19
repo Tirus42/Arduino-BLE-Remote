@@ -1,14 +1,11 @@
 class UIButtonElement extends AUIElement {
-	container: HTMLDivElement;
 	button: HTMLButtonElement;
 
 	constructor(name: string, parent: UIGroupElement) {
 		super(UIElementType.Button, name, parent);
 
-		this.container = HTML.CreateDivElement('bevel');
 		this.button = HTML.CreateButtonElement(name);
-
-		this.container.appendChild(this.button);
+		this.button.classList.add('control-button');
 
 		this.button.onclick = () => {
 			this.onInputValueChange(this, new ValueWrapper(true));
@@ -16,7 +13,7 @@ class UIButtonElement extends AUIElement {
 	}
 
 	getDomRootElement() : HTMLElement {
-		return this.container;
+		return this.button;
 	}
 
 	override setPathValue(path: string[], newValue: ValueWrapper) {
