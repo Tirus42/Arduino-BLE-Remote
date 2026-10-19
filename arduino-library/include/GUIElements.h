@@ -217,12 +217,22 @@ struct AControlElementWithParentAndValue : public AControlElementWithParent<Deri
 struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler, RangeElement> {
 	int32_t min;
 	int32_t max;
+	bool showPercent : 1;
 
 	RangeElement(GroupElement* parent, const std::string& name, int32_t min, int32_t max, std::shared_ptr<IInt32DataHandler> dataHandler) :
-		AControlElementWithParentAndValue(parent, name, dataHandler), min(min), max(max) {}
+		AControlElementWithParentAndValue(parent, name, dataHandler), min(min), max(max), showPercent(false) {}
 
 	GroupElement* endRange() {
 		return parent;
+	}
+
+	/**
+	 * Shows the current value as a percentage of the range instead of the raw value.
+	 * The value which is sent to the device is not affected by this.
+	 */
+	RangeElement* setShowPercent(bool showPercent = true) {
+		this->showPercent = showPercent;
+		return this;
 	}
 
 	virtual const char* getElementTypeName() const override {
@@ -237,6 +247,12 @@ struct RangeElement : public AControlElementWithParentAndValue<IInt32DataHandler
 		s << min;
 		s << ",\"max\":"_s;
 		s << max;
+
+		if (showPercent) {
+			s << ","_s;
+			s << jsonField("percent", true);
+		}
+
 		s << ",";
 		s << jsonValueField(dataHandler ? dataHandler->getValue() : int32_t(0));
 		s << "}";

@@ -84,8 +84,8 @@ class UIGroupElement extends AUIElement {
 		return element;
 	}
 
-	addRange(name: string, min: number, max: number, value: number) : UIRangeElement {
-		const element = new UIRangeElement(name, this, min, max, value);
+	addRange(name: string, min: number, max: number, value: number, showPercent: boolean = false) : UIRangeElement {
+		const element = new UIRangeElement(name, this, min, max, value, showPercent);
 		this._addChildElement(element);
 		return element;
 	}

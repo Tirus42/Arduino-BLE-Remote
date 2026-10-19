@@ -21,6 +21,7 @@ interface NumberValueJSON extends ADataJSON {
 interface RangeDataJSON extends NumberValueJSON {
 	min: number;
 	max: number;
+	percent?: boolean;
 }
 
 interface CheckboxJSON extends NumberValueJSON {}
@@ -92,8 +93,9 @@ function ProcessJSON(currentRoot: UIGroupElement, jsonNode: ADataJSON) {
 			const jMin = rangeNode.min;
 			const jMax = rangeNode.max;
 			const jValue = rangeNode.value;
+			const jShowPercent = rangeNode.percent === true;
 
-			createdElement = currentRoot.addRange(jName, jMin, jMax, jValue);
+			createdElement = currentRoot.addRange(jName, jMin, jMax, jValue, jShowPercent);
 			break;
 		}
 

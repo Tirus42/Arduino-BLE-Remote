@@ -4,8 +4,9 @@ class UIRangeElement extends AUIElement {
 	rawValueLabel: HTMLLabelElement;
 	minValue: number;
 	maxValue: number;
+	showPercent: boolean;
 
-	constructor(name: string, parent: UIGroupElement, min: number, max: number, value: number) {
+	constructor(name: string, parent: UIGroupElement, min: number, max: number, value: number, showPercent: boolean = false) {
 		super(UIElementType.RangeSelector, name, parent);
 
 		this.container = HTML.CreateDivElement('bevel');
@@ -13,6 +14,7 @@ class UIRangeElement extends AUIElement {
 		this.rawValueLabel = HTML.CreateLabelElement();
 		this.minValue = min;
 		this.maxValue = max;
+		this.showPercent = showPercent;
 
 		this.range.oninput = () => {
 			this.onInputValueChange();
@@ -69,7 +71,34 @@ class UIRangeElement extends AUIElement {
 		super.onInputValueChange(this, new ValueWrapper(this.getValue()));
 	}
 
+	/**
+	 * Updates the label next to the slider.
+	 *
+	 * When the percent flag is set, the value is shown as a percentage of the
+	 * range [minValue, maxValue] (e.g. "55.2%"). Otherwise the raw value is shown
+	 * (e.g. "10 / 255") as before.
+	 */
 	private _updateUIValues() {
-		this.rawValueLabel.innerHTML = this.getValue() + ' / ' + this.maxValue;
+		if (this.showPercent) {
+			this.rawValueLabel.innerHTML = this._getPercentText();
+		} else {
+			this.rawValueLabel.innerHTML = this.getValue() + ' / ' + this.maxValue;
+		}
+	}
+
+	/**
+	 * \return the current value relative to the range as percentage with one digit of precision.
+	 */
+	private _getPercentText() : string {
+		const range = this.maxValue - this.minValue;
+
+		// Avoid a division by zero for a range without any span.
+		if (range <= 0) {
+			return '0.0%';
+		}
+
+		const percent = (this.getValue() - this.minValue) / range * 100;
+
+		return percent.toFixed(1) + '%';
 	}
 }
