@@ -1,1 +1,7 @@
 ble.js
+ble.d.ts
+ble.tsbuildinfo
+
+serviceworker.js
+serviceworker.d.ts
+serviceworker.tsbuildinfo
