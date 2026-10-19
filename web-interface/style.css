@@ -90,16 +90,31 @@ input.slider {
     background-color: #0000ff44;
 }
 
+.slider-background.hue,
+.slider-background.saturation,
+.slider-background.lightness {
+    /* Scale the gradient to the slider itself instead of the whole row including the label. */
+    background-size: calc(100% - 5rem) 100%;
+}
+
 .slider-background.hue {
-    background: linear-gradient(to right, red, yellow, green, cyan, blue, violet, red);
+    background-image: linear-gradient(to right, red, yellow, green, cyan, blue, violet, red);
+    /* Repeat the hue gradient behind the label area instead of stretching it. */
+    background-repeat: repeat-x;
 }
 
 .slider-background.saturation {
-    background: linear-gradient(to right, gray, white);
+    /* The gradient ends in white, so extend that white area behind the label. */
+    background-color: white;
+    background-image: linear-gradient(to right, gray, white);
+    background-repeat: no-repeat;
 }
 
 .slider-background.lightness {
-    background: linear-gradient(to right, black, white);
+    /* The gradient ends in white, so extend that white area behind the label. */
+    background-color: white;
+    background-image: linear-gradient(to right, black, white);
+    background-repeat: no-repeat;
 }
 
 .slider-background.white {

@@ -152,7 +152,9 @@ class HSLColor extends IColor {
 	}
 
 	override toRGB() : RGBColor {
-		const h = this.h;
+		// Hue 360 is equivalent to 0. Wrapping also keeps negative values and
+		// rounded-to-360 values inside the ranges handled below.
+		const h = ((this.h % 360) + 360) % 360;
 		const s = this.s / 100;
 		const l = this.l / 100;
 
