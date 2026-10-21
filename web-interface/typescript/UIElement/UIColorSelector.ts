@@ -137,6 +137,22 @@ class UIColorSelector extends AUIElement {
 		this.sliderL.slider.value = '' + hsl.l;
 
 		this.sliderW.slider.value = '' + newColor.toRGBW().w;
+
+		this._updateSliderValueLabels();
+	}
+
+	/**
+	 * Updates the value labels of all sliders, including the currently hidden
+	 * RGB or HSL ones, so the correct values are shown after switching modes.
+	 */
+	private _updateSliderValueLabels() {
+		this.sliderR.updateValueLabel();
+		this.sliderG.updateValueLabel();
+		this.sliderB.updateValueLabel();
+		this.sliderH.updateValueLabel();
+		this.sliderS.updateValueLabel();
+		this.sliderL.updateValueLabel();
+		this.sliderW.updateValueLabel();
 	}
 
 	getValue() : RGBWColor {

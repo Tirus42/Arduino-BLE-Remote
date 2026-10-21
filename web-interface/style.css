@@ -69,13 +69,39 @@ div.expander {
 }
 
 input.slider {
-    width: calc(100% - 5rem);
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
+    flex: 0 0 calc(100% - 6.5rem);
+    width: calc(100% - 6.5rem);
+    margin: 0.5rem 0;
+}
+
+.slider-labels {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    gap: 0.35em;
+    padding: 0 0.35em;
+    font-size: 0.9em;
+}
+
+.slider-labels > span {
+    min-width: 2.4em;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.slider-value {
+    min-width: 3.8em;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
 }
 
 .slider-background {
     border-radius: 5px;
+    display: flex;
+    align-items: center;
 }
 
 .slider-background.red {
@@ -93,14 +119,16 @@ input.slider {
 .slider-background.hue,
 .slider-background.saturation,
 .slider-background.lightness {
-    /* Scale the gradient to the slider itself instead of the whole row including the label. */
-    background-size: calc(100% - 5rem) 100%;
+    /* Scale the gradient to the slider itself instead of the whole row including the labels. */
+    background-size: calc(100% - 6.5rem) 100%;
 }
 
 .slider-background.hue {
     background-image: linear-gradient(to right, red, yellow, green, cyan, blue, violet, red);
     /* Repeat the hue gradient behind the label area instead of stretching it. */
     background-repeat: repeat-x;
+    /* The gradient makes white text unreadable in dark mode. */
+    color: black;
 }
 
 .slider-background.saturation {
